@@ -14,11 +14,7 @@
 
 #include "PHKControllerRecord.h"
 
-const char *deviceName = "Night Light";
-const char *deviceIdentity = "12:00:54:23:51:13";
-const char *manufacture = "ET Chan";
-const char *password = "523-12-643";
-const char *deviceUUID = "9FCF7180-6CAA-4174-ABC0-E3FAE58E3ADD";
+#include "Configuration.h"
 
 const char hapJsonType[] = "application/hap+json";
 const char pairingTlv8Type[] = "application/pairing+tlv8";
@@ -27,7 +23,7 @@ bool lightOn = false;
 
 using namespace std;
 
-typedef enum:int {
+typedef enum {
     charType_adminOnlyAccess    = 0x1,
     charType_audioFeedback      = 0x5,
     charType_brightness         = 0x8,
@@ -71,10 +67,10 @@ typedef enum:int {
     charType_thermostat         = 0x4A
 } charType;
 
-enum :int {
+enum {
     premission_read = 1,
     premission_write = 1 << 1,
-    premission_update = 1 << 2
+    premission_update = 1 << 2  //Update = Accessory will notice the controller
 };
 
 typedef enum {
@@ -299,9 +295,11 @@ inline string dictionaryWrap(string *key, string *value, unsigned short len) {
     return result;
 }
 
-void getAccessoryInfo(char **reply, unsigned short *replyLen) {
-    int numberOfAccessory = 0;
+typedef struct {
     
+} dictionary;
+
+void getAccessoryInfo(char **reply, unsigned short *replyLen) {
     //Map everything in JSON
     int attID = 1;
     
@@ -324,7 +322,7 @@ void getAccessoryInfo(char **reply, unsigned short *replyLen) {
         
         {
             string info[5];
-            info[0] = attribute(charType_serviceName, attID++, premission_read|premission_update, deviceName, 0);
+            info[0] = attribute(charType_serviceName, attID++, premission_read, deviceName, 0);
             info[1] = attribute(charType_manufactuer, attID++, premission_read, manufacture, 0);
             info[2] = attribute(charType_modelName, attID++, premission_read, deviceName, 0);
             info[3] = attribute(charType_serialNumber, attID++, premission_read, deviceUUID, 0);
@@ -352,8 +350,8 @@ void getAccessoryInfo(char **reply, unsigned short *replyLen) {
         
         {
             string setting[2];
-            setting[0] = attribute(charType_on, attID++, premission_read|premission_update|premission_write, lightOn, unit_none);
-            setting[1] = attribute(charType_serviceName, attID++, premission_read|premission_update, deviceName, 0);
+            setting[0] = attribute(charType_on, attID++, premission_read|premission_write, lightOn, unit_none);
+            setting[1] = attribute(charType_serviceName, attID++, premission_read, deviceName, 0);
             
             value[2] = arrayWrap(setting, 2);
             key[2] = "characteristics";
@@ -371,50 +369,54 @@ void getAccessoryInfo(char **reply, unsigned short *replyLen) {
 }
 
 void updatePowerState(const char *requestData, char **reply, unsigned short *replyLen) {
-    char value[6];
-    sscanf(requestData, "{\"characteristics\":[{\"aid\":1,\"iid\":8,\"value\":%s}]}", value);
-    if (strcmp(value, "true")) {
+    char value[6];  bzero(value, 6);
+    int aid = 0;    int iid = 0;
+    sscanf(requestData, "{\"characteristics\":[{\"aid\":%d,\"iid\":%d,\"value\":%s}]}", &aid, &iid, value);
+    
+    printf("Receive value update for accessory %d, characteristic %d, to value %s\n", aid, iid, value);
+    
+    if (strncmp(value, "true", 4) == 0) {
         lightOn = true;
-    } else {
+    } else if (strncmp(value, "false", 5) == 0) {
         lightOn = false;
     }
     
-    int attID = 1;
     string cid;
     {
-        string value[5];
-        string key[5];
+        string value[3];
+        string key[3];
         char temp[8];
         snprintf(temp, 8, "\"%X\"", charType_lightBulb);
         
-        value[0] = temp;
-        key[0] = "type";
+        value[0] = "1";
+        key[0] = "aid"; 
         
-        snprintf(temp, 8, "%d", attID++);
+        snprintf(temp, 8, "%d", 8);
         value[1] = temp;
         key[1] = "iid";
         
-        value[2] = "0";
-        key[2] = "errorCode";
+        if (lightOn) {
+            value[2] = "true";
+        } else
+            value[2] = "false";
+        key[2] = "value";
         
-        value[3] = "true";
-        key[3] = "value";
-        
-        value[4] = "{}";
-        key[4] = "response";
-        
-        cid = dictionaryWrap(key, value, 5);
+        cid = dictionaryWrap(key, value, 3);
     }
+    cid = "{\"characteristics\":["+cid+"]}";
     
     
     *replyLen = cid.length();
-    *reply = new char[*replyLen];
+    *reply = new char[*replyLen+1];
+    bzero(*reply, *replyLen+1);
     bcopy(cid.c_str(), *reply, *replyLen);
     
-    printf("%s\n", *reply);
+    *reply = nullptr;
+    *replyLen = 0;
 }
 
 void handleAccessory(const char *request, unsigned int requestLen, char **reply, unsigned int *replyLen) {
+    
     int index = 5;
     char method[5];
     {
@@ -436,16 +438,17 @@ void handleAccessory(const char *request, unsigned int requestLen, char **reply,
     
     const char *dataPtr = request;
     while (true) {
-        dataPtr++;
+        dataPtr = &dataPtr[1];
         if (dataPtr[0] == '\r' && dataPtr[1] == '\n' && dataPtr[2] == '\r' && dataPtr[3] == '\n') break;
     }
     
-    char *replyData = nullptr;  unsigned short replyDataLen = 0;
+    dataPtr += 4;
+    
+    char *replyData = NULL;  unsigned short replyDataLen = 0;
     
     int statusCode;
     
-    printf("%s\n", request);
-    
+    const char *protocol = "HTTP/1.1";
     const char *returnType = hapJsonType;
     
     if (strcmp(path, "/accessories") == 0) {
@@ -454,39 +457,47 @@ void handleAccessory(const char *request, unsigned int requestLen, char **reply,
         getAccessoryInfo(&replyData, &replyDataLen);
     } else if (strcmp(path, "/pairings") == 0) {
         //Pairing with new user
+        PHKNetworkMessage msg(request);
         statusCode = 200;
-        PHKNetworkMessage msg = PHKNetworkMessage(request);
         if (*msg.data.dataPtrForIndex(0) == 3) {
             PHKKeyRecord controllerRec;
             bcopy(msg.data.dataPtrForIndex(3), controllerRec.publicKey, 32);
             bcopy(msg.data.dataPtrForIndex(1), controllerRec.controllerID, 36);
             addControllerKey(controllerRec);
             PHKNetworkMessageDataRecord drec;
-            drec.activate = true; drec.data = new char[1]; *drec.data = 1;
-            drec.index = 7; drec.length = 1;
+            drec.activate = true; drec.data = new char[1]; *drec.data = 2;
+            drec.index = 6; drec.length = 1;
             PHKNetworkMessageData data;
-            data.addRecord(drec);
             data.rawData((const char **)&replyData, &replyDataLen);
             returnType = pairingTlv8Type;
             statusCode = 200;
         }
     } else if (strcmp(path, "/characteristics") == 0){
-        //Change characteristics
-        updatePowerState(dataPtr, &replyData, &replyDataLen);
-        statusCode = 207;
+        if (strncmp(method, "GET", 3) == 0) {
+            //Read characteristics
+        } else if (strncmp(method, "PUT", 3) == 0) {
+            //Change characteristics
+            //protocol = "EVENT/1.0";
+            updatePowerState(dataPtr, &replyData, &replyDataLen);
+            statusCode = 204;
+        } else {
+            return;
+        }
     } else {
         //Error
+        printf("%s\n", request);
         printf("%s", path);
         statusCode = 404;
     }
     
     *reply = new char[1024];
-    int len = snprintf(*reply, 1024, "HTTP/1.1 %d OK\r\n\
+    int len = snprintf(*reply, 1024, "%s %d OK\r\n\
 Content-Type: %s\r\n\
-Content-Length: %u\r\n\r\n", statusCode, returnType, replyDataLen);
+Content-Length: %u\r\n\r\n", protocol, statusCode, returnType, replyDataLen);
     
     bcopy(replyData, &(*reply)[len], replyDataLen);
     *replyLen = len+replyDataLen;
     
     if (replyData) delete [] replyData;
+    
 }

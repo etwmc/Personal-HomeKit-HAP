@@ -11,19 +11,20 @@
 
 #include <iostream>
 #include <fstream>
-#include <srp.h>
 #include <errno.h>
 
-//HKDF-SHA512
-#include <nmcrypto/crypto_kdf.h>
-//ChaCha20-Poly1035
 extern "C" {
-    #include "poly1305.h"
-#include "hkdf.h"
-#include "chacha20_simple.h"
-#include "ecrypt-sync.h"
+    //ChaCha20-Poly1035
+#include "poly1305-opt-master/poly1305.h"
+#include "Chacha20/chacha20_simple.h"
+    //HKDF-SHA512
+#include "rfc6234-master/hkdf.h"
+    //ED25519
 #include "ed25519-donna/ed25519.h"
-#include "curve25519-donna.h"
+    //Curve25519
+#include "curve25519/curve25519-donna.h"
+    //SRP
+#include "srp/srp.h"
 }
 
 //Store controller public key
@@ -31,6 +32,8 @@ extern "C" {
 
 //Handle Data
 #include "PHKAccessory.h"
+
+#include "Configuration.h"
 
 using namespace std;
 
@@ -195,8 +198,11 @@ void PHKNetworkIP::handlePairSeup(int subSocket, char *buffer) const {
                 int proofLen;
                 keyStr = msg.data.dataPtrForIndex(3);
                 keyLen = msg.data.lengthForIndex(3);
-                proofStr = msg.data.dataPtrForIndex(4);
-                proofLen = msg.data.lengthForIndex(4);
+                char *temp = msg.data.dataPtrForIndex(4);
+                if (temp != NULL) {
+                    proofStr = temp;
+                    proofLen = msg.data.lengthForIndex(4);
+                }
                 
                 
                 SRP_RESULT result = SRP_compute_key(srp, &secretKey, (const unsigned char*)keyStr, keyLen);
@@ -483,6 +489,9 @@ void PHKNetworkIP::handlePairVerify(int subSocket, char *buffer) const {
                 PHKNetworkMessageDataRecord encryptRecord;
                 encryptRecord.activate = true;  encryptRecord.index = 5; encryptRecord.length = msgLen+16;  encryptRecord.data = new char[encryptRecord.length];    bcopy(encryptMsg, encryptRecord.data, encryptRecord.length);
                 response.data.addRecord(encryptRecord);
+                
+                delete [] encryptMsg;
+                delete [] polyKey;
             }
                 break;
             case 3: {
@@ -534,6 +543,10 @@ void PHKNetworkIP::handlePairVerify(int subSocket, char *buffer) const {
                         hkdf(SHA512, (uint8_t *)"Control-Salt", 12, sharedKey, 32, (uint8_t *)"Control-Write-Encryption-Key", 28, controllerToAccessoryKey, 32);
                         
                         
+                    } else {
+                        PHKNetworkMessageDataRecord error;
+                        error.activate = true;  error.data = new char[1];   error.data[0] = 2;  error.index = 7;    error.length = 1;
+                        response.data.addRecord(error);
                     }
                     
                     delete [] decryptData;
@@ -556,6 +569,10 @@ void PHKNetworkIP::handlePairVerify(int subSocket, char *buffer) const {
     
     int len;
     
+#if HomeKitLog == 1
+    printf("Successfully Connect\n");
+#endif
+    
     do {
         bzero(buffer, 4096);
         len = read(subSocket, buffer, 4096);
@@ -570,7 +587,7 @@ void PHKNetworkIP::handlePairVerify(int subSocket, char *buffer) const {
             //Ploy1305 key
             char temp[64];  bzero(temp, 64); char temp2[64];  bzero(temp2, 64);
             chacha20_encrypt(&chacha20, (const uint8_t*)temp, (uint8_t *)temp2, 64);
-            bzero(decryptData, msgLen);
+            bzero(decryptData, 2048);
             chacha20_decrypt(&chacha20, (const uint8_t *)&buffer[2], (uint8_t *)decryptData, msgLen);
             
             char verify[16];    bzero(verify, 16);
@@ -595,8 +612,9 @@ void PHKNetworkIP::handlePairVerify(int subSocket, char *buffer) const {
             poly1305_finish(&verifyContext, (unsigned char *)verify);
             
             //Output return
-            char *resultData = 0; unsigned int resultLen;
+            char *resultData = 0; unsigned int resultLen = 0;
             handleAccessory(decryptData, msgLen, &resultData, &resultLen);
+            
             
             char *reply = new char[resultLen+18];
             reply[0] = resultLen%256;
@@ -609,7 +627,7 @@ void PHKNetworkIP::handlePairVerify(int subSocket, char *buffer) const {
             
             poly1305_init(&verifyContext, (const unsigned char*)temp2);
             {
-                char *waste = new char[16];
+                char waste[16];
                 bzero(waste, 16);
                 
                 poly1305_update(&verifyContext, (const unsigned char *)reply, 2);
@@ -629,6 +647,9 @@ void PHKNetworkIP::handlePairVerify(int subSocket, char *buffer) const {
             
             delete [] reply;
             delete [] resultData;
+            
+            
+            
         }
     } while (len > 0);
 
@@ -684,6 +705,8 @@ void PHKNetworkMessage::getBinaryPtr(char **buffer, int *contentLength) {
     (*contentLength)+=dataSize;
     (*buffer)[*contentLength] = 0;
 }
+
+
 
 PHKNetworkMessageData & PHKNetworkMessageData::operator=(const PHKNetworkMessageData &data) {
     count = data.count;
@@ -805,6 +828,8 @@ PHKNetworkMessageDataRecord &PHKNetworkMessageDataRecord::operator=(const PHKNet
     index = r.index;
     activate = r.activate;
     length = r.length;
+    if (data)
+        delete [] data;
     data = new char[length];
     bcopy(r.data, data, length);
     return *this;

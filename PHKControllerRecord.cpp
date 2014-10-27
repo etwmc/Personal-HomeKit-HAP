@@ -22,7 +22,7 @@ vector<PHKKeyRecord>controllerRecords = readIn();
 
 vector<PHKKeyRecord>readIn() {
     ifstream fs;
-    fs.open("/controller", std::ifstream::in);
+    fs.open("/Users/waimanchan/controller", std::ifstream::in);
     
     char buffer[69];
     
