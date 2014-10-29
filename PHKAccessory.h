@@ -10,9 +10,6 @@
 #define __Workbench__PHKAccessory__
 
 #include <stdio.h>
-extern const char *deviceName;
-extern const char *deviceIdentity;
-extern const char *password;
 
 void handleAccessory(const char *request, unsigned int requestLen, char **reply, unsigned int *replyLen);
 

@@ -172,7 +172,7 @@ void PHKNetworkIP::handlePairSeup(int subSocket, char *buffer) const {
                 
                 SRP_RESULT result = SRP_set_username(srp, "Pair-Setup");
                 result = SRP_set_params(srp, (const unsigned char *)modulusStr, 384, (const unsigned char *)generator, 1, saltChar, 16);
-                result = SRP_set_auth_password(srp, password);
+                result = SRP_set_auth_password(srp, devicePassword);
                 result = SRP_gen_pub(srp, &publicKey);
                 
                 saltRec.index = 2;

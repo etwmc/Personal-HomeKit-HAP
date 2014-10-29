@@ -81,8 +81,8 @@ typedef enum {
 } unit;
 
 //Wrap to JSON
-string wrap(const char *str) { return (string)"\""+str+"\""; }
-string attribute(unsigned short type, unsigned short acclaim, int p, bool value, unit valueUnit) {
+inline string wrap(const char *str) { return (string)"\""+str+"\""; }
+inline string attribute(unsigned short type, unsigned short acclaim, int p, bool value) {
     string result;
     
     result += wrap("value")+":";
@@ -108,23 +108,11 @@ string attribute(unsigned short type, unsigned short acclaim, int p, bool value,
     result += wrap("iid")+":"+tempStr;
     result += ",";
     
-    switch (valueUnit) {
-        case unit_arcDegree:
-            result += wrap("unit")+":"+wrap("arcdegrees");
-            break;
-        case unit_celsius:
-            result += wrap("unit")+":"+wrap("celsius");
-            break;
-        case unit_percentage:
-            result += wrap("unit")+":"+wrap("percentage");
-            break;
-    }
-    
     result += "\"format\":\"bool\"";
     
     return "{"+result+"}";
 }
-string attribute(unsigned short type, unsigned short acclaim, int p, int value, int minVal, int maxVal, int step, unit valueUnit) {
+inline string attribute(unsigned short type, unsigned short acclaim, int p, int value, int minVal, int maxVal, int step, unit valueUnit) {
     string result;
     char tempStr[4];
     
@@ -178,7 +166,7 @@ string attribute(unsigned short type, unsigned short acclaim, int p, int value, 
     
     return "{"+result+"}";
 }
-string attribute(unsigned short type, unsigned short acclaim, int p, float value, float minVal, float maxVal, float step, unit valueUnit) {
+inline string attribute(unsigned short type, unsigned short acclaim, int p, float value, float minVal, float maxVal, float step, unit valueUnit) {
     string result;
     char tempStr[4];
     
@@ -232,7 +220,7 @@ string attribute(unsigned short type, unsigned short acclaim, int p, float value
     
     return "{"+result+"}";
 }
-string attribute(unsigned short type, unsigned short acclaim, int p, string value, unsigned short len) {
+inline string attribute(unsigned short type, unsigned short acclaim, int p, string value, unsigned short len) {
     string result;
     char tempStr[4];
     
@@ -295,125 +283,314 @@ inline string dictionaryWrap(string *key, string *value, unsigned short len) {
     return result;
 }
 
-typedef struct {
-    
-} dictionary;
+class characteristics {
+protected:
+    const int iid;
+    const unsigned short type;
+    const int premission;
+public:
+    characteristics(int _iid, unsigned short _type, int _premission): iid(_iid), type(_type), premission(_premission) {}
+    virtual string value() { return ""; }
+    virtual void setValue(string str) {}
+    virtual string describe() {
+        return "";
+    }
+};
 
-void getAccessoryInfo(char **reply, unsigned short *replyLen) {
-    //Map everything in JSON
-    int attID = 1;
-    
-    string result;
-    
-    string serviceString[2];
-    {
-        string key[3];
-        string value[3];
-        
-        char temp[8];
-        snprintf(temp, 8, "\"%X\"", charType_accessoryInfo);
-        
-        value[0] = temp;
-        key[0] = "type";
-        
-        snprintf(temp, 8, "%d", attID++);
-        value[1] = temp;
-        key[1] = "iid";
+//To store value of device state, subclass the following type
+class boolCharacteristics: public characteristics {
+protected:
+    bool _value;
+public:
+    boolCharacteristics(int _iid, unsigned short _type, int _premission): characteristics(_iid, _type, _premission) {}
+    virtual string value() {
+        return _value? "true": "false";
+    }
+    virtual void setValue(string str) {
+        if (strncmp("true", str.c_str(), 4))
+            _value = true;
+        else
+            _value = false;
+    }
+    virtual string describe() {
+        return attribute(type, iid, premission, _value);
+    }
+};
+
+class floatCharacteristics: public characteristics {
+    float _value;
+    const float _minVal, _maxVal, _step;
+    const unit _unit;
+public:
+    floatCharacteristics(int _iid, unsigned short _type, int _premission, float minVal, float maxVal, float step, unit charUnit): characteristics(_iid, _type, _premission), _minVal(minVal), _maxVal(maxVal), _step(step), _unit(charUnit) {}
+    virtual string value() {
+        char temp[16];
+        snprintf(temp, 16, "%f", _value);
+        return temp;
+    }
+    virtual void setValue(string str) {
+        float temp = atof(str.c_str());
+        if (temp == temp) {
+            _value = temp;
+        }
+    }
+    virtual string describe() {
+        return attribute(type, iid, premission, _value, _minVal, _maxVal, _step, _unit);
+    }
+};
+
+class intCharacteristics: public characteristics {
+    int _value;
+    const int _minVal, _maxVal, _step;
+    const unit _unit;
+public:
+    intCharacteristics(int _iid, unsigned short _type, int _premission, int minVal, int maxVal, int step, unit charUnit): characteristics(_iid, _type, _premission), _minVal(minVal), _maxVal(maxVal), _step(step), _unit(charUnit) {}
+    virtual string value() {
+        char temp[16];
+        snprintf(temp, 16, "%d", _value);
+        return temp;
+    }
+    virtual void setValue(string str) {
+        float temp = atoi(str.c_str());
+        if (temp == temp) {
+            _value = temp;
+        }
+    }
+    virtual string describe() {
+        return attribute(type, iid, premission, _value, _minVal, _maxVal, _step, _unit);
+    }
+};
+
+class stringCharacteristics: public characteristics {
+    string _value;
+    const unsigned short maxLen;
+public:
+    stringCharacteristics(int _iid, unsigned short _type, int _premission, unsigned short _maxLen): characteristics(_iid, _type, _premission), maxLen(_maxLen) {}
+    virtual string value() {
+        return _value;
+    }
+    virtual void setValue(string str) {
+        _value = str;
+    }
+    virtual string describe() {
+        return attribute(type, iid, premission, _value, maxLen);
+    }
+};
+
+//To identify the accessory, finish the function identify() with the method
+//And situation with multiple accessory, renew
+class identifyCharacteristics: public boolCharacteristics {
+public:
+    identifyCharacteristics(int iid): boolCharacteristics(iid, charType_identify, premission_write) {}
+    void setValue(string str) {
+        boolCharacteristics::setValue(str);
+        if (_value)
+            identify();
+    }
+    virtual void identify() {}
+    virtual string describe() {
+        string a = boolCharacteristics::describe();
+        return a;
+    }
+};
+
+//Abstract Layer of object
+class Service {
+public:
+    const int serviceID, uuid;
+    Service(int _serviceID, int _uuid): serviceID(_serviceID), uuid(_uuid) {}
+    inline virtual short numberOfCharacteristics() { return 0; }
+    inline virtual characteristics *characteristicsAtIndex(int index) { return nullptr; }
+    string describe() {
+        string keys[3] = {"iid", "type", "characteristics"};
+        string values[3];
+        {
+            char temp[8];
+            snprintf(temp, 8, "%d", serviceID);
+            values[0] = temp;
+        }
+        {
+            char temp[8];
+            snprintf(temp, 8, "\"%X\"", uuid);
+            values[1] = temp;
+        }
+        {
+            int no = numberOfCharacteristics();
+            string *chars = new string[no];
+            for (int i = 0; i < no; i++) {
+                chars[i] = characteristicsAtIndex(i+1+serviceID)->describe();
+            }
+            values[2] = arrayWrap(chars, no);
+            delete [] chars;
+        }
+        return dictionaryWrap(keys, values, 3);
+    }
+};
+
+class Accessory {
+public:
+    const int aid;
+    Accessory(int _aid): aid(_aid) {}
+    virtual short numberOfService() { return 0; }
+    virtual Service *serviceAtIndex(int index) {
+        return nullptr;
+    }
+    characteristics *characteristicsAtIndex(int index) {
+        unsigned short no = numberOfService();
+        for (int i = 1; i <= no; i++) {
+            Service *s1 = serviceAtIndex(i+1);
+            if (s1) {
+                if (index < s1->serviceID) {
+                    return serviceAtIndex(i)->characteristicsAtIndex(index);
+                }
+            }
+            else
+                return serviceAtIndex(i)->characteristicsAtIndex(index);
+        }
+        return nullptr;
+    }
+    string describe() {
+        string keys[2];
+        string values[2];
         
         {
-            string info[5];
-            info[0] = attribute(charType_serviceName, attID++, premission_read, deviceName, 0);
-            info[1] = attribute(charType_manufactuer, attID++, premission_read, manufacture, 0);
-            info[2] = attribute(charType_modelName, attID++, premission_read, deviceName, 0);
-            info[3] = attribute(charType_serialNumber, attID++, premission_read, deviceUUID, 0);
-            info[4] = attribute(charType_identify, attID++, premission_write, false, unit_none);
-            
-            value[2] = arrayWrap(info, 5);
-            key[2] = "characteristics";
+            keys[0] = "aid";
+            char temp[8];
+            sprintf(temp, "%d", aid);
+            values[0] = temp;
         }
-        
-        serviceString[0] = dictionaryWrap(key, value, 3);
-    }
-    {
-        string key[3];
-        string value[3];
-        
-        char temp[8];
-        snprintf(temp, 8, "\"%X\"", charType_lightBulb);
-        
-        value[0] = temp;
-        key[0] = "type";
-        
-        snprintf(temp, 8, "%d", attID++);
-        value[1] = temp;
-        key[1] = "iid";
-        
+                   
         {
-            string setting[2];
-            setting[0] = attribute(charType_on, attID++, premission_read|premission_write, lightOn, unit_none);
-            setting[1] = attribute(charType_serviceName, attID++, premission_read, deviceName, 0);
-            
-            value[2] = arrayWrap(setting, 2);
-            key[2] = "characteristics";
+            //Form services list
+            int noOfService = numberOfService();
+            string *services = new string[noOfService];
+            for (int i = 0; i < noOfService; i++) {
+                services[i] = serviceAtIndex(i+1)->describe();
+            }
+            keys[1] = "services";
+            values[1] = arrayWrap(services, noOfService);
+            delete [] services;
         }
         
-        serviceString[1] = dictionaryWrap(key, value, 3);
+        string result = dictionaryWrap(keys, values, 2);
+        return result;
     }
-    
-    result = arrayWrap(serviceString, 2);
-    result = "{\"accessories\":[{\"aid\":1,\"services\":"+result+"}]}";
-    
-    *replyLen = result.length();
-    *reply  = new char[*replyLen+1];
-    strcpy(*reply, result.c_str());
-}
+};
 
-void updatePowerState(const char *requestData, char **reply, unsigned short *replyLen) {
-    char value[6];  bzero(value, 6);
-    int aid = 0;    int iid = 0;
-    sscanf(requestData, "{\"characteristics\":[{\"aid\":%d,\"iid\":%d,\"value\":%s}]}", &aid, &iid, value);
-    
-    printf("Receive value update for accessory %d, characteristic %d, to value %s\n", aid, iid, value);
-    
-    if (strncmp(value, "true", 4) == 0) {
-        lightOn = true;
-    } else if (strncmp(value, "false", 5) == 0) {
-        lightOn = false;
+class AccessorySet {
+    Accessory *mainAccessory;
+public:
+    virtual short numberOfAccessory() {
+        return 0;
     }
-    
-    string cid;
-    {
-        string value[3];
-        string key[3];
-        char temp[8];
-        snprintf(temp, 8, "\"%X\"", charType_lightBulb);
-        
-        value[0] = "1";
-        key[0] = "aid"; 
-        
-        snprintf(temp, 8, "%d", 8);
-        value[1] = temp;
-        key[1] = "iid";
-        
-        if (lightOn) {
-            value[2] = "true";
-        } else
-            value[2] = "false";
-        key[2] = "value";
-        
-        cid = dictionaryWrap(key, value, 3);
+    virtual Accessory *accessoryAtIndex(int index) {
+        return nullptr;
     }
-    cid = "{\"characteristics\":["+cid+"]}";
-    
-    
-    *replyLen = cid.length();
-    *reply = new char[*replyLen+1];
-    bzero(*reply, *replyLen+1);
-    bcopy(cid.c_str(), *reply, *replyLen);
-    
-    *reply = nullptr;
-    *replyLen = 0;
-}
+    string describe() {
+        int numberOfAcc = numberOfAccessory();
+        string *desc = new string[numberOfAcc];
+        for (int i = 0; i < numberOfAcc; i++) {
+            desc[i] = accessoryAtIndex(i)->describe();
+        }
+        string result = arrayWrap(desc, numberOfAcc);
+        delete [] desc;
+        string key = "accessories";
+        result = dictionaryWrap(&key, &result, 1);
+        return result;
+    }
+};
+
+//For all the service type, subclass from Service or its subclass
+//Instance ID must be bigger than 0
+class infoService: public Service {
+    stringCharacteristics name;
+    stringCharacteristics manufactuer;
+    stringCharacteristics modelName;
+    stringCharacteristics serialNumber;
+    identifyCharacteristics identify;
+public:
+    infoService(int index): Service(index, charType_accessoryInfo),
+    name(index+1, charType_serviceName, premission_read, 0),
+    manufactuer(index+2, charType_manufactuer, premission_read, 0),
+    modelName(index+3, charType_modelName, premission_read, 0),
+    serialNumber(index+4, charType_serialNumber, premission_read, 0),
+    identify(index+5) {
+        name.setValue(deviceName);
+        manufactuer.setValue(manufactuerName);
+        modelName.setValue(deviceName);
+        serialNumber.setValue(deviceUUID);
+    }
+    inline virtual short numberOfCharacteristics() { return 5; }
+    inline virtual characteristics *characteristicsAtIndex(int index) {
+        switch (index-1-serviceID) {
+            case 0:
+                return &name;
+            case 1:
+                return &manufactuer;
+            case 2:
+                return &modelName;
+            case 3:
+                return &serialNumber;
+            case 4:
+                return &identify;
+        }
+        return nullptr;
+    }
+};
+
+class lightService: public Service {
+    stringCharacteristics serviceName;
+    boolCharacteristics powerState;
+public:
+    lightService(int index): Service(index, charType_lightBulb),
+    serviceName(index+1, charType_serviceName, premission_read, 0),
+    powerState(index+2, charType_on, premission_read|premission_write){
+        serviceName.setValue(deviceName);
+        powerState.setValue("false");
+    }
+    inline virtual short numberOfCharacteristics() { return 2; }
+    inline virtual characteristics *characteristicsAtIndex(int index) {
+        switch (index-1-serviceID) {
+            case 0:
+                return &serviceName;
+            case 1:
+                return &powerState;
+        }
+        return nullptr;
+    }
+};
+
+//For bridge, create more than one subclass, and insert in main accessory
+//Also change the MainAccessorySet
+class MainAccessory: public Accessory {
+    infoService info;
+    lightService light;
+public:
+    MainAccessory(int aid): Accessory(aid),
+    info(1), light(info.serviceID+info.numberOfCharacteristics()+1) {}
+    inline virtual short numberOfService() { return 2; }
+    inline virtual Service *serviceAtIndex(int index) {
+        switch (index-1) {
+            case 0:
+                return &info;
+            case 1:
+                return &light;
+        }
+        return nullptr;
+    }
+};
+
+//For bridge, change the subject to dynamic assign
+class MainAccessorySet: public AccessorySet {
+    MainAccessory acc;
+public:
+    MainAccessorySet(): acc(1) {
+    }
+    short numberOfAccessory() { return 1; }
+    Accessory * accessoryAtIndex(int index) { return &acc; }
+};
+
+MainAccessorySet accSet;
 
 void handleAccessory(const char *request, unsigned int requestLen, char **reply, unsigned int *replyLen) {
     
@@ -454,7 +631,11 @@ void handleAccessory(const char *request, unsigned int requestLen, char **reply,
     if (strcmp(path, "/accessories") == 0) {
         //Publish the characterists of the accessories
         statusCode = 200;
-        getAccessoryInfo(&replyData, &replyDataLen);
+        string desc = accSet.describe();
+        replyDataLen = desc.length();
+        replyData = new char[replyDataLen+1];
+        bcopy(desc.c_str(), replyData, replyDataLen);
+        replyData[replyDataLen] = 0;
     } else if (strcmp(path, "/pairings") == 0) {
         //Pairing with new user
         PHKNetworkMessage msg(request);
@@ -471,15 +652,50 @@ void handleAccessory(const char *request, unsigned int requestLen, char **reply,
             data.rawData((const char **)&replyData, &replyDataLen);
             returnType = pairingTlv8Type;
             statusCode = 200;
+        } else {
+            PHKKeyRecord controllerRec;
+            bcopy(msg.data.dataPtrForIndex(1), controllerRec.controllerID, 36);
+            removeControllerKey(controllerRec);
+            PHKNetworkMessageDataRecord drec;
+            drec.activate = true; drec.data = new char[1]; *drec.data = 2;
+            drec.index = 6; drec.length = 1;
+            PHKNetworkMessageData data;
+            data.rawData((const char **)&replyData, &replyDataLen);
+            returnType = pairingTlv8Type;
+            statusCode = 200;
         }
-    } else if (strcmp(path, "/characteristics") == 0){
+    } else if (strncmp(path, "/characteristics", 16) == 0){
         if (strncmp(method, "GET", 3) == 0) {
             //Read characteristics
+            int aid = 0;    int iid = 0;
+            sscanf(path, "/characteristics?id=%d.%d", &aid, &iid);
+            characteristics *c = accSet.accessoryAtIndex(aid)->characteristicsAtIndex(iid);
+            char c1[2], c2[2];
+            sprintf(c1, "%d", aid);
+            sprintf(c2, "%d", iid);
+            string s[3] = {c1, c2, c->value()};
+            string k[3] = {"aid", "iid", "value"};
+            string result = dictionaryWrap(k, s, 3);
+            string d = "characteristics";
+            result = arrayWrap(&result, 1);
+            result = dictionaryWrap(&d, &result, 1);
+            
+            replyDataLen = result.length();
+            replyData = new char[replyDataLen];
+            bcopy(result.c_str(), replyData, replyDataLen);
+            
         } else if (strncmp(method, "PUT", 3) == 0) {
             //Change characteristics
             //protocol = "EVENT/1.0";
-            updatePowerState(dataPtr, &replyData, &replyDataLen);
+            int aid = 0;    int iid = 0; char value[16];
+            sscanf(dataPtr, "{\"characteristics\":[{\"aid\":%d,\"iid\":%d,\"value\":%s}]}", &aid, &iid, value);
+            
+            characteristics *c = accSet.accessoryAtIndex(aid)->characteristicsAtIndex(iid);
+            
+            c->setValue(value);
+            
             statusCode = 204;
+            
         } else {
             return;
         }

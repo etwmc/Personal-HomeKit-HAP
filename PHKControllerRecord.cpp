@@ -7,6 +7,7 @@
 //
 
 #include "PHKControllerRecord.h"
+#include "Configuration.h"
 #include <vector>
 
 #ifdef MCU
@@ -22,7 +23,7 @@ vector<PHKKeyRecord>controllerRecords = readIn();
 
 vector<PHKKeyRecord>readIn() {
     ifstream fs;
-    fs.open("/Users/waimanchan/controller", std::ifstream::in);
+    fs.open(controllerRecordsAddress, std::ifstream::in);
     
     char buffer[69];
     
@@ -45,7 +46,7 @@ void addControllerKey(PHKKeyRecord record) {
         controllerRecords.push_back(record);
         
         ofstream fs;
-        fs.open("/Users/waimanchan/controller", std::ofstream::trunc);
+        fs.open(controllerRecordsAddress, std::ofstream::trunc);
         
         for (auto it = controllerRecords.begin(); it != controllerRecords.end(); it++) {
             fs.write(it->controllerID, 36);
