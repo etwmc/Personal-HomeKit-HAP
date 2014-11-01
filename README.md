@@ -12,10 +12,11 @@ This is a spin-off project from my attempt to build a Siri controlled night ligh
 6. Allow controller to update value
 
 Current Requirment: 
-1. Grand Central Dispatch is used for multithread
+1. OpenSSL
+2. Avahi (For Linux)
 
 Future Plan: 
-1. Spin off from OS X only to support microcontroller
+1. Support microcontroller
 2. Notify controller about value updated
 
 Dear Lawyer of Apple, 
