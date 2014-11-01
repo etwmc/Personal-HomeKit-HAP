@@ -42,17 +42,17 @@
 
 /*
  * The RFC2945 server keeps track of the running hash state via
- * SHA_CTX structures pointed to by the meth_data pointer.
+ * SHACTX structures pointed to by the meth_data pointer.
  * The "hash" member is the hash value that will be sent to the
  * other side; the "ckhash" member is the hash value expected
  * from the other side.  The server also keeps two more "old"
  * hash states, for backwards-compatibility.
  */
 struct server_meth_st {
-  SHA_CTX hash;
-  SHA_CTX ckhash;
-  SHA_CTX oldhash;
-  SHA_CTX oldckhash;
+  SHACTX hash;
+  SHACTX ckhash;
+  SHACTX oldhash;
+  SHACTX oldckhash;
   unsigned char k[RFC2945_KEY_LEN];
   unsigned char r[RFC2945_RESP_LEN];
 };
@@ -101,7 +101,7 @@ srp6_server_params(SRP * srp, const unsigned char * modulus, int modlen,
 		   const unsigned char * salt, int saltlen)
 {
   unsigned char buf1[SHA_DIGESTSIZE], buf2[SHA_DIGESTSIZE];
-  SHA_CTX ctxt;
+  SHACTX ctxt;
   int i;
 
   /* Fields set by SRP_set_params */
@@ -147,7 +147,7 @@ srp6_server_auth(SRP * srp, const unsigned char * a, int alen)
 static SRP_RESULT
 srp6_server_passwd(SRP * srp, const unsigned char * p, int plen)
 {
-  SHA_CTX ctxt;
+  SHACTX ctxt;
   unsigned char dig[SHA_DIGESTSIZE];
 
   SHAInit(&ctxt);
@@ -227,7 +227,7 @@ srp6a_server_genpub(SRP * srp, cstr ** result)
   SRP_RESULT ret;
   BigInteger k;
   cstr * s;
-  SHA_CTX ctxt;
+  SHACTX ctxt;
   unsigned char dig[SHA_DIGESTSIZE];
 
   SHAInit(&ctxt);
@@ -257,7 +257,7 @@ srp6_server_key(SRP * srp, cstr ** result,
 {
   cstr * s;
   BigInteger t1, t2, t3;
-  SHA_CTX ctxt;
+  SHACTX ctxt;
   unsigned char dig[SHA_DIGESTSIZE];
   int modlen;
 
@@ -331,7 +331,7 @@ srp6_server_key(SRP * srp, cstr ** result,
   BigIntegerClearFree(t3);
 
   /* convert srp->key into session key, update hashes */
-    SHA_CTX sctx;
+    SHACTX sctx;
     BigIntegerToCstr(srp->key, s);
     SHAInit(&sctx);
     SHAUpdate(&sctx, s->data, s->length);

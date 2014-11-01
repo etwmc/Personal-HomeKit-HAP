@@ -96,7 +96,6 @@ static inline void U32TO8_LE(unsigned char *p, const uint32_t v) {
 }
 #endif
 
-#if !defined(HAVE_UINT128)
 static inline uint32_t U8TO32_LE(const unsigned char *p) {
 	return
 	(((uint32_t)(p[0])      ) | 
@@ -104,32 +103,3 @@ static inline uint32_t U8TO32_LE(const unsigned char *p) {
 	 ((uint32_t)(p[2]) << 16) |
 	 ((uint32_t)(p[3]) << 24));
 }
-#else
-static inline uint64_t U8TO64_LE(const unsigned char *p) {
-	return
-	(((uint64_t)(p[0])      ) |
-	 ((uint64_t)(p[1]) <<  8) |
-	 ((uint64_t)(p[2]) << 16) |
-	 ((uint64_t)(p[3]) << 24) |
-	 ((uint64_t)(p[4]) << 32) |
-	 ((uint64_t)(p[5]) << 40) |
-	 ((uint64_t)(p[6]) << 48) |
-	 ((uint64_t)(p[7]) << 56));
-}
-
-static inline void U64TO8_LE(unsigned char *p, const uint64_t v) {
-	p[0] = (unsigned char)(v      );
-	p[1] = (unsigned char)(v >>  8);
-	p[2] = (unsigned char)(v >> 16);
-	p[3] = (unsigned char)(v >> 24);
-	p[4] = (unsigned char)(v >> 32);
-	p[5] = (unsigned char)(v >> 40);
-	p[6] = (unsigned char)(v >> 48);
-	p[7] = (unsigned char)(v >> 56);
-}
-#endif
-
-#include <stdlib.h>
-#include <string.h>
-
-

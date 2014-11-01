@@ -20,9 +20,9 @@ using namespace std;
 #define IPv4 1
 #define IPv6 0
 
+void broadcastMessage(char *buffer, size_t len);
+
 class PHKNetworkIP {
-    int _socket_v4, _socket_v6;
-    DNSServiceRef netServiceV4, netServiceV6;
     void setupSocket();
     TXTRecordRef buildTXTRecord();
     void handlePairSeup(int subSocket, char *buffer) const;
@@ -36,7 +36,7 @@ public:
 class PHKNetworkMessageDataRecord {
 public:
     unsigned char index = 0;
-    char *data = nullptr;
+    char *data = 0;
     unsigned int length = 0;
     bool activate = false;
     ~PHKNetworkMessageDataRecord();

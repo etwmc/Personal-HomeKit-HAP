@@ -64,7 +64,7 @@ static unsigned char crpool[64];
 static unsigned char randpool[SHA_DIGESTSIZE], randout[SHA_DIGESTSIZE];
 static unsigned long randcnt = 0;
 static unsigned int outpos = 0;
-SHA_CTX randctxt;
+SHACTX randctxt;
 #endif /* OPENSSL */
 
 /*
@@ -86,7 +86,7 @@ t_envhash(out)
 {
   char ** ptr;
   char ebuf[256];
-  SHA_CTX ctxt;
+  SHACTX ctxt;
 
   SHAInit(&ctxt);
   for(ptr = environ; *ptr; ++ptr) {
@@ -121,7 +121,7 @@ t_fshash(out)
 {
   char dotpath[128];
   struct stat st;
-  SHA_CTX ctxt;
+  SHACTX ctxt;
   int i, pinode;
   dev_t pdev;
 
@@ -194,7 +194,7 @@ unsigned long raw_truerand();
 static void
 t_initrand()
 {
-  SHA_CTX ctxt;
+  SHACTX ctxt;
 #ifdef USE_FTIME
   struct timeb t;
 #else
@@ -291,7 +291,7 @@ t_stronginitrand()
 #if 1	/* t_initrand() has been improved enough to make this unnecessary */
   t_initrand();
 #else
-  SHA_CTX ctxt;
+  SHACTX ctxt;
   unsigned int rawrand[NUM_RANDOMS];
   int i;
 
@@ -378,7 +378,7 @@ t_sessionkey(key, sk, sklen)
   unsigned i, klen;
   unsigned char * hbuf;
   unsigned char hout[SHA_DIGESTSIZE];
-  SHA_CTX ctxt;
+  SHACTX ctxt;
 
   while(sklen > 0 && *sk == 0) {	/* Skip leading 0's */
     --sklen;
@@ -418,7 +418,7 @@ t_mgf1(mask, masklen, seed, seedlen)
      const unsigned char * seed;
      unsigned seedlen;
 {
-  SHA_CTX ctxt;
+  SHACTX ctxt;
   unsigned i = 0;
   unsigned pos = 0;
   unsigned char cnt[4];

@@ -12,7 +12,10 @@
 #include <iostream>
 #include <fstream>
 #include <errno.h>
+#include <strings.h>
 
+
+//Security
 extern "C" {
     //ChaCha20-Poly1035
 #include "poly1305-opt-master/poly1305.h"
@@ -35,6 +38,11 @@ extern "C" {
 
 #include "Configuration.h"
 
+#if MCU
+#else
+#include <pthread.h>
+#endif
+
 using namespace std;
 
 #define portNumber 0
@@ -48,10 +56,20 @@ char tempStr[3073];
 
 const unsigned char accessorySecretKey[32] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xC9, 0x0F, 0xDA, 0xA2, 0x21, 0x68, 0xC2, 0x34, 0xC4, 0xC6, 0x62, 0x8B, 0x80, 0xDC, 0x1C, 0xD1, 0x29, 0x02, 0x4E, 0x08, 0x8A, 0x67, 0xCC, 0x74};
 
+#if MCU
+#else
+pthread_t threads[numberOfClient];
+#endif
+int connection[numberOfClient];
+
+int _socket_v4, _socket_v6;
+DNSServiceRef netServiceV4, netServiceV6;
+
+//Network Setup
 int setupSocketV4(unsigned int maximumConnection) {
     int _socket = socket(PF_INET, SOCK_STREAM, 0);
     sockaddr_in addr;   bzero(&addr, sizeof(addr));
-    addr.sin_addr.s_addr = htonl(INADDR_ANY);   addr.sin_family = PF_INET;  addr.sin_len = sizeof(addr);    addr.sin_port = htons(portNumber);
+    addr.sin_addr.s_addr = htonl(INADDR_ANY);   addr.sin_family = PF_INET;    addr.sin_port = htons(portNumber);
     bind(_socket, (const struct sockaddr *)&addr, sizeof(addr));
     listen(_socket, maximumConnection);
     return _socket;
@@ -60,7 +78,7 @@ int setupSocketV4(unsigned int maximumConnection) {
 int setupSocketV6(unsigned int maximumConnection) {
     int _socket = socket(PF_INET6, SOCK_STREAM, 0);
     sockaddr_in6 addr;   bzero(&addr, sizeof(addr));
-    addr.sin6_addr = in6addr_any;   addr.sin6_family = PF_INET6;  addr.sin6_len = sizeof(addr);    addr.sin6_port = htons(portNumber);
+    addr.sin6_addr = in6addr_any;   addr.sin6_family = PF_INET6;    addr.sin6_port = htons(portNumber);
     bind(_socket, (const struct sockaddr *)&addr, sizeof(addr));
     listen(_socket, maximumConnection);
     return _socket;
@@ -79,7 +97,8 @@ unsigned short getSocketPortNumberV6(int _socket) {
 }
 
 void registerFail(DNSServiceRef sdRef, DNSRecordRef RecordRef, DNSServiceFlags flags, DNSServiceErrorType errorCode, void *context ) {
-    
+    printf("Service can't register\n");
+    exit(0);
 }
 
 TXTRecordRef PHKNetworkIP::buildTXTRecord() {
@@ -105,44 +124,79 @@ void PHKNetworkIP::setupSocket() {
 PHKNetworkIP::PHKNetworkIP() {
     SRP_initialize_library();
     srand((unsigned int)time(NULL));
-    
+    for (int i = 0; i < numberOfClient; i++) {
+        connection[i] = -1;
+    }
     setupSocket();
 }
 
-dispatch_queue_t queue = dispatch_queue_create("", DISPATCH_QUEUE_CONCURRENT);
-void PHKNetworkIP::handleConnection() const {
-    int subSocket = accept(_socket_v4, nullptr, NULL);
-    
-    dispatch_async(queue, ^{
-        
-        char buffer[4096];  ssize_t len;
+//Connection Logic
+void broadcastMessage(char *buffer, size_t len) {
+    for (int i = 0; i < numberOfClient; i++) {
+        int socketNumber = connection[i];
+        if (socketNumber >= 0) {
+            write(socketNumber, buffer, len);
+        }
+    }
+}
+void handlePairSeup(int subSocket, char *buffer);
+void handlePairVerify(int subSocket, char *buffer);
+void *connectionLoop(void *argument) {
+    int subSocket = *(int*)argument;ssize_t len;
+    if (subSocket >= 0) {
+        printf("Start Connect: %d\n", subSocket);
         
         do {
-            len = read(subSocket, buffer, 4096);
-            PHKNetworkMessage msg(buffer);
+            char *buffer = new char[4096];
+            len = read(*(int*)argument, buffer, 4096);
+            PHKNetworkMessage *msg = new PHKNetworkMessage(buffer);
             if (len > 0) {
-                if (!strcmp(msg.directory, "pair-setup")){
+                if (!strcmp(msg->directory, "pair-setup")){
                     
                     /*
                      * The processo f pair-setup
                      */
                     
-                    handlePairSeup(subSocket, buffer);
+                    handlePairSeup(*(int*)argument, buffer);
                     
                 }
-                else if (!strcmp(msg.directory, "pair-verify")){
-                    handlePairVerify(subSocket, buffer);
+                else if (!strcmp(msg->directory, "pair-verify")){
+                    handlePairVerify(*(int*)argument, buffer);
                 }
             }
             
+            delete [] buffer;
+            delete msg;
+            
         } while (len > 0);
         
-        close(subSocket);
-    });
+        close(*(int*)argument);
+        printf("Stop Connect: %d\n", subSocket);
+        
+        *(int*)argument = -1;
+        
+    }
+    return NULL;
+}
+
+void PHKNetworkIP::handleConnection() const {
+    int subSocket = accept(_socket_v4, 0, NULL);
+    
+    int index = -1;
+    for (int i = 0; i < numberOfClient; i++) {
+        if (connection[i] == -1) {
+            index = i;
+            connection[index] = subSocket;
+            pthread_create(&threads[index], NULL, connectionLoop, &connection[index]);
+            break;
+        }
+    }
+    
+    if (index < 0) close(subSocket);
 
 }
 
-void PHKNetworkIP::handlePairSeup(int subSocket, char *buffer) const {
+void handlePairSeup(int subSocket, char *buffer) {
     PHKNetworkMessageDataRecord stateRecord;
     stateRecord.activate = true;    stateRecord.data = new char[1]; stateRecord.length = 1;    stateRecord.index = 6;
     int state = 1;
@@ -151,13 +205,15 @@ void PHKNetworkIP::handlePairSeup(int subSocket, char *buffer) const {
     cstr *secretKey = NULL, *publicKey = NULL, *response = NULL;
     char sessionKey[64];
     PHKNetworkMessage msg = PHKNetworkMessage(buffer);
-    char *responseBuffer = nullptr; int responseLen = 0;
+    char *responseBuffer = 0; int responseLen = 0;
     
     do {
         msg = PHKNetworkMessage(buffer);
         PHKNetworkResponse mResponse(200);
         
         state = *msg.data.dataPtrForIndex(6);
+        
+        printf("Start pairing state: %d\n", state);
         
         *stateRecord.data = state+1;
         switch (state) {
@@ -192,7 +248,7 @@ void PHKNetworkIP::handlePairSeup(int subSocket, char *buffer) const {
             }
                 break;
             case 3: {
-                const char *keyStr = nullptr;
+                const char *keyStr = 0;
                 int keyLen = 0;
                 const char *proofStr;
                 int proofLen;
@@ -212,17 +268,22 @@ void PHKNetworkIP::handlePairSeup(int subSocket, char *buffer) const {
                     PHKNetworkMessageDataRecord responseRecord;
                     responseRecord.activate = true; responseRecord.data = new char[1]; responseRecord.data[0] = 2; responseRecord.index = 7;   responseRecord.length = 1;
                     mResponse.data.addRecord(responseRecord);
-                    cout << "Oops at M3" << endl;
+#if HomeKitLog == 1
+                    printf("Oops at M3\n");
+#endif
                 } else {
                     SRP_respond(srp, &response);
                     PHKNetworkMessageDataRecord responseRecord;
                     responseRecord.activate = true; responseRecord.index = 4;   responseRecord.length = response->length; responseRecord.data = new char[responseRecord.length];    bcopy(response->data, responseRecord.data, responseRecord.length);
                     mResponse.data.addRecord(responseRecord);
+#if HomeKitLog == 1
+                    printf("Password Correct\n");
+#endif
                 }
                 
                 const char salt[] = "Pair-Setup-Encrypt-Salt";
                 const char info[] = "Pair-Setup-Encrypt-Info";
-                int i = hkdf(SHA512, (const unsigned char*)salt, strlen(salt), (const unsigned char*)secretKey->data, secretKey->length, (const unsigned char*)info, strlen(info), (uint8_t*)sessionKey, 32);
+                int i = hkdf((const unsigned char*)salt, strlen(salt), (const unsigned char*)secretKey->data, secretKey->length, (const unsigned char*)info, strlen(info), (uint8_t*)sessionKey, 32);
                 if (i != 0) return;
             }
                 break;
@@ -263,7 +324,9 @@ void PHKNetworkIP::handlePairSeup(int subSocket, char *buffer) const {
                     PHKNetworkMessageDataRecord responseRecord;
                     responseRecord.activate = true; responseRecord.data = new char[1]; responseRecord.data[0] = 1; responseRecord.index = 7;   responseRecord.length = 1;
                     mResponse.data.addRecord(responseRecord);
-                    cout << "Oops at M5" << endl;
+#if HomeKitLog == 1
+                    printf("Corrupt TLv8 at M5\n");
+#endif
                 } else {
                     /*
                      * HAK Pair Setup M6
@@ -284,7 +347,7 @@ void PHKNetworkIP::handlePairSeup(int subSocket, char *buffer) const {
                     
                     const char salt[] = "Pair-Setup-Controller-Sign-Salt";
                     const char info[] = "Pair-Setup-Controller-Sign-Info";
-                    int i = hkdf(SHA512, (const unsigned char*)salt, strlen(salt), (const unsigned char*)secretKey->data, secretKey->length, (const unsigned char*)info, strlen(info), (uint8_t*)controllerHash, 32);
+                    int i = hkdf((const unsigned char*)salt, strlen(salt), (const unsigned char*)secretKey->data, secretKey->length, (const unsigned char*)info, strlen(info), (uint8_t*)controllerHash, 32);
                     if (i != 0) return;
                     
                     bcopy(controllerIdentifier, &controllerHash[32], 36);
@@ -310,7 +373,7 @@ void PHKNetworkIP::handlePairSeup(int subSocket, char *buffer) const {
                             const char salt[] = "Pair-Setup-Accessory-Sign-Salt";
                             const char info[] = "Pair-Setup-Accessory-Sign-Info";
                             uint8_t output[150];
-                            hkdf(SHA512, (const unsigned char*)salt, strlen(salt), (const unsigned char*)secretKey->data, secretKey->length, (const unsigned char*)info, strlen(info), output, 32);
+                            hkdf((const unsigned char*)salt, strlen(salt), (const unsigned char*)secretKey->data, secretKey->length, (const unsigned char*)info, strlen(info), output, 32);
                             
                             bcopy(deviceIdentity, &output[32], strlen(deviceIdentity));
                             
@@ -386,17 +449,24 @@ void PHKNetworkIP::handlePairSeup(int subSocket, char *buffer) const {
         mResponse.data.addRecord(stateRecord);
         mResponse.getBinaryPtr(&responseBuffer, &responseLen);
         if (responseBuffer) {
-            send(subSocket, (const void *)responseBuffer, (size_t)responseLen, 0);
+            int len = write(subSocket, (const void *)responseBuffer, (size_t)responseLen);
             delete [] responseBuffer;
+#if HomeKitLog == 1
+            printf("Pair Setup Transfered length %d\n", len);
+#endif
+        } else {
+#if HomeKitLog == 1
+            printf("Why empty response\n");
+#endif
         }
         
     } while (read(subSocket, (void *)buffer, 4096) > 0);
     SRP_free(srp);
 }
 
-void PHKNetworkIP::handlePairVerify(int subSocket, char *buffer) const {
+void handlePairVerify(int subSocket, char *buffer) {
     bool end = false;
-    int state = 1;
+    unsigned char state = 1;
     
     curved25519_key secretKey;
     curved25519_key publicKey;
@@ -408,13 +478,20 @@ void PHKNetworkIP::handlePairVerify(int subSocket, char *buffer) const {
     unsigned long long numberOfMsgRec = 0, numberOfMsgSend = 0;
     
     uint8_t enKey[32];
+#if HomeKitLog == 1
+    printf("Start Pair Verify\n");
+#endif
     
     do {
         PHKNetworkMessage msg(buffer);
         PHKNetworkResponse response = PHKNetworkResponse(200);
         bcopy(msg.data.dataPtrForIndex(6), &state, 1);
+        printf("State = %d\n", state);
         switch (state) {
             case 1: {
+#if HomeKitLog == 1
+                printf("Pair Verify M1\n");
+#endif
                 bcopy(msg.data.dataPtrForIndex(3), controllerPublicKey, 32);
                 for (short i = 0; i < sizeof(secretKey); i++) {
                     secretKey[i] = rand();
@@ -452,9 +529,8 @@ void PHKNetworkIP::handlePairVerify(int subSocket, char *buffer) const {
                 unsigned char salt[] = "Pair-Verify-Encrypt-Salt";
                 unsigned char info[] = "Pair-Verify-Encrypt-Info";
                 
-                hkdf(SHA512, salt, 24, sharedKey, 32, info, 24, enKey, 32);
-                
-                const char *plainMsg = nullptr;   unsigned short msgLen = 0;
+                int i = hkdf(salt, 24, sharedKey, 32, info, 24, enKey, 32);
+                const char *plainMsg = 0;   unsigned short msgLen = 0;
                 data.rawData(&plainMsg, &msgLen);
                 
                 char *encryptMsg = new char[msgLen+16];
@@ -495,6 +571,9 @@ void PHKNetworkIP::handlePairVerify(int subSocket, char *buffer) const {
             }
                 break;
             case 3: {
+#if HomeKitLog == 1
+                printf("Pair Verify M3\n");
+#endif
                 char *encryptedData = msg.data.dataPtrForIndex(5);
                 short packageLen = msg.data.lengthForIndex(5);
                 
@@ -535,12 +614,12 @@ void PHKNetworkIP::handlePairVerify(int subSocket, char *buffer) const {
                     
                     int err = ed25519_sign_open((const unsigned char *)tempMsg, 100, (const unsigned char *)rec.publicKey, (const unsigned char *)data.dataPtrForIndex(10));
                     
-                    char *repBuffer = nullptr;  int repLen = 0;
+                    char *repBuffer = 0;  int repLen = 0;
                     if (err == 0) {
                         end = true;
                         
-                        hkdf(SHA512, (uint8_t *)"Control-Salt", 12, sharedKey, 32, (uint8_t *)"Control-Read-Encryption-Key", 27, accessoryToControllerKey, 32);
-                        hkdf(SHA512, (uint8_t *)"Control-Salt", 12, sharedKey, 32, (uint8_t *)"Control-Write-Encryption-Key", 28, controllerToAccessoryKey, 32);
+                        hkdf((uint8_t *)"Control-Salt", 12, sharedKey, 32, (uint8_t *)"Control-Read-Encryption-Key", 27, accessoryToControllerKey, 32);
+                        hkdf((uint8_t *)"Control-Salt", 12, sharedKey, 32, (uint8_t *)"Control-Write-Encryption-Key", 28, controllerToAccessoryKey, 32);
                         
                         
                     } else {
@@ -559,7 +638,7 @@ void PHKNetworkIP::handlePairVerify(int subSocket, char *buffer) const {
         stage.activate = true;   stage.data = new char; stage.data[0] = state+1; stage.index = 6; stage.length = 1;
         response.data.addRecord(stage);
         
-        char *repBuffer = nullptr;  int repLen = 0;
+        char *repBuffer = 0;  int repLen = 0;
         response.getBinaryPtr(&repBuffer, &repLen);
         write(subSocket, repBuffer, repLen);
         delete [] repBuffer;
@@ -643,7 +722,7 @@ void PHKNetworkIP::handlePairVerify(int subSocket, char *buffer) const {
             }
             poly1305_finish(&verifyContext, (unsigned char*)&reply[resultLen+2]);
             
-            write(subSocket, reply, resultLen+18);
+            len = send(subSocket, reply, resultLen+18, 0);
             
             delete [] reply;
             delete [] resultData;
@@ -656,6 +735,7 @@ void PHKNetworkIP::handlePairVerify(int subSocket, char *buffer) const {
     delete [] decryptData;
 }
 
+//Object Logic
 PHKNetworkIP::~PHKNetworkIP() {
     DNSServiceRefDeallocate(netServiceV4);
 }
@@ -814,7 +894,7 @@ char *PHKNetworkMessageData::dataPtrForIndex(unsigned char index) {
     int _index = recordIndex(index);
     if (_index >= 0)
         return records[_index].data;
-    return nullptr;
+    return 0;
 }
 
 unsigned int PHKNetworkMessageData::lengthForIndex(unsigned char index) {

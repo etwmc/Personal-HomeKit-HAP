@@ -10,6 +10,10 @@
 #include <string.h>
 #include <strings.h>
 
+extern "C" {
+#include <stdlib.h>
+}
+
 #include "PHKNetworkIP.h"
 
 #include "PHKControllerRecord.h"
@@ -95,7 +99,7 @@ inline string attribute(unsigned short type, unsigned short acclaim, int p, bool
     if (p & premission_read) result += wrap("pr")+",";
     if (p & premission_write) result += wrap("pw")+",";
     if (p & premission_update) result += wrap("ev")+",";
-    result.pop_back();
+    result = result.substr(0, result.size()-1);
     result += "]";
     result += ",";
     
@@ -138,7 +142,7 @@ inline string attribute(unsigned short type, unsigned short acclaim, int p, int 
     if (p & premission_read) result += wrap("pr")+",";
     if (p & premission_write) result += wrap("pw")+",";
     if (p & premission_update) result += wrap("ev")+",";
-    result.pop_back();
+    result = result.substr(0, result.size()-1);
     result += "]";
     result += ",";
     
@@ -192,7 +196,7 @@ inline string attribute(unsigned short type, unsigned short acclaim, int p, floa
     if (p & premission_read) result += wrap("pr")+",";
     if (p & premission_write) result += wrap("pw")+",";
     if (p & premission_update) result += wrap("ev")+",";
-    result.pop_back();
+    result = result.substr(0, result.size()-1);
     result += "]";
     result += ",";
     
@@ -232,7 +236,7 @@ inline string attribute(unsigned short type, unsigned short acclaim, int p, stri
     if (p & premission_read) result += wrap("pr")+",";
     if (p & premission_write) result += wrap("pw")+",";
     if (p & premission_update) result += wrap("ev")+",";
-    result.pop_back();
+    result = result.substr(0, result.size()-1);
     result += "]";
     result += ",";
     
@@ -262,7 +266,7 @@ inline string arrayWrap(string *s, unsigned short len) {
     for (int i = 0; i < len; i++) {
         result += s[i]+",";
     }
-    result.pop_back();
+    result = result.substr(0, result.size()-1);
     
     result += "]";
     
@@ -276,7 +280,7 @@ inline string dictionaryWrap(string *key, string *value, unsigned short len) {
     for (int i = 0; i < len; i++) {
         result += wrap(key[i].c_str())+":"+value[i]+",";
     }
-    result.pop_back();
+    result = result.substr(0, result.size()-1);
     
     result += "}";
     
@@ -295,6 +299,8 @@ public:
     virtual string describe() {
         return "";
     }
+    bool writable() { return premission&premission_write; }
+    bool update() { return false&&premission&premission_update; }
 };
 
 //To store value of device state, subclass the following type
@@ -400,7 +406,7 @@ public:
     const int serviceID, uuid;
     Service(int _serviceID, int _uuid): serviceID(_serviceID), uuid(_uuid) {}
     inline virtual short numberOfCharacteristics() { return 0; }
-    inline virtual characteristics *characteristicsAtIndex(int index) { return nullptr; }
+    inline virtual characteristics *characteristicsAtIndex(int index) { return 0; }
     string describe() {
         string keys[3] = {"iid", "type", "characteristics"};
         string values[3];
@@ -433,7 +439,7 @@ public:
     Accessory(int _aid): aid(_aid) {}
     virtual short numberOfService() { return 0; }
     virtual Service *serviceAtIndex(int index) {
-        return nullptr;
+        return 0;
     }
     characteristics *characteristicsAtIndex(int index) {
         unsigned short no = numberOfService();
@@ -447,7 +453,7 @@ public:
             else
                 return serviceAtIndex(i)->characteristicsAtIndex(index);
         }
-        return nullptr;
+        return 0;
     }
     string describe() {
         string keys[2];
@@ -484,7 +490,7 @@ public:
         return 0;
     }
     virtual Accessory *accessoryAtIndex(int index) {
-        return nullptr;
+        return 0;
     }
     string describe() {
         int numberOfAcc = numberOfAccessory();
@@ -534,7 +540,7 @@ public:
             case 4:
                 return &identify;
         }
-        return nullptr;
+        return 0;
     }
 };
 
@@ -556,9 +562,11 @@ public:
             case 1:
                 return &powerState;
         }
-        return nullptr;
+        return 0;
     }
 };
+
+
 
 //For bridge, create more than one subclass, and insert in main accessory
 //Also change the MainAccessorySet
@@ -576,7 +584,7 @@ public:
             case 1:
                 return &light;
         }
-        return nullptr;
+        return 0;
     }
 };
 
@@ -592,8 +600,24 @@ public:
 
 MainAccessorySet accSet;
 
-void handleAccessory(const char *request, unsigned int requestLen, char **reply, unsigned int *replyLen) {
+void announce() {
+    const char *protocol = "HTTP/1.1";
+    const char *returnType = hapJsonType;
     
+    string desc = accSet.describe();
+    
+    char *reply = new char[1024];
+    int len = snprintf(reply, 1024, "EVENT/1.1 200 OK\r\n\
+                       Content-Type: application/hap+json\r\n\
+                       Content-Length: %lu\r\n\r\n%s", desc.length(), desc.c_str());
+    broadcastMessage(reply, len);
+    delete [] reply;
+}
+
+void handleAccessory(const char *request, unsigned int requestLen, char **reply, unsigned int *replyLen) {
+#if HomeKitLog == 1
+    printf("Receive request\n");
+#endif
     int index = 5;
     char method[5];
     {
@@ -630,6 +654,9 @@ void handleAccessory(const char *request, unsigned int requestLen, char **reply,
     
     if (strcmp(path, "/accessories") == 0) {
         //Publish the characterists of the accessories
+#if HomeKitLog == 1
+        printf("Ask for accessories info\n");
+#endif
         statusCode = 200;
         string desc = accSet.describe();
         replyDataLen = desc.length();
@@ -638,6 +665,9 @@ void handleAccessory(const char *request, unsigned int requestLen, char **reply,
         replyData[replyDataLen] = 0;
     } else if (strcmp(path, "/pairings") == 0) {
         //Pairing with new user
+#if HomeKitLog == 1
+        printf("Add new user\n");
+#endif
         PHKNetworkMessage msg(request);
         statusCode = 200;
         if (*msg.data.dataPtrForIndex(0) == 3) {
@@ -649,10 +679,14 @@ void handleAccessory(const char *request, unsigned int requestLen, char **reply,
             drec.activate = true; drec.data = new char[1]; *drec.data = 2;
             drec.index = 6; drec.length = 1;
             PHKNetworkMessageData data;
+            data.addRecord(drec);
             data.rawData((const char **)&replyData, &replyDataLen);
             returnType = pairingTlv8Type;
             statusCode = 200;
         } else {
+#if HomeKitLog == 1
+            printf("Delete user");
+#endif
             PHKKeyRecord controllerRec;
             bcopy(msg.data.dataPtrForIndex(1), controllerRec.controllerID, 36);
             removeControllerKey(controllerRec);
@@ -660,6 +694,7 @@ void handleAccessory(const char *request, unsigned int requestLen, char **reply,
             drec.activate = true; drec.data = new char[1]; *drec.data = 2;
             drec.index = 6; drec.length = 1;
             PHKNetworkMessageData data;
+            data.addRecord(drec);
             data.rawData((const char **)&replyData, &replyDataLen);
             returnType = pairingTlv8Type;
             statusCode = 200;
@@ -670,6 +705,9 @@ void handleAccessory(const char *request, unsigned int requestLen, char **reply,
             int aid = 0;    int iid = 0;
             sscanf(path, "/characteristics?id=%d.%d", &aid, &iid);
             characteristics *c = accSet.accessoryAtIndex(aid)->characteristicsAtIndex(iid);
+#if HomeKitLog == 1
+            printf("Ask for one characteristics: %d . %d\n", aid, iid);
+#endif
             char c1[2], c2[2];
             sprintf(c1, "%d", aid);
             sprintf(c2, "%d", iid);
@@ -681,26 +719,50 @@ void handleAccessory(const char *request, unsigned int requestLen, char **reply,
             result = dictionaryWrap(&d, &result, 1);
             
             replyDataLen = result.length();
-            replyData = new char[replyDataLen];
+            replyData = new char[replyDataLen+1];
+            replyData[replyDataLen] = 0;
             bcopy(result.c_str(), replyData, replyDataLen);
+            statusCode = 200;
             
         } else if (strncmp(method, "PUT", 3) == 0) {
             //Change characteristics
-            //protocol = "EVENT/1.0";
             int aid = 0;    int iid = 0; char value[16];
             sscanf(dataPtr, "{\"characteristics\":[{\"aid\":%d,\"iid\":%d,\"value\":%s}]}", &aid, &iid, value);
+#if HomeKitLog == 1
+            printf("Ask to change one characteristics: %d . %d -> %s\n", aid, iid, value);
+#endif
+            Accessory *a = accSet.accessoryAtIndex(aid);
+            if (a==NULL) {
+                statusCode = 400;
+            } else {
+                characteristics *c = a->characteristicsAtIndex(iid);
+                if (c==NULL) {
+                } else {
+                    characteristics *c = a->characteristicsAtIndex(iid);
+                    if (c->writable()) {
+                        c->setValue(value);
+                        
+                        statusCode = 204;
+                        if (c->update())
+                            //Broadcast change to everyone
+                            announce();
+                    } else {
+                        statusCode = 400;
+                    }
+                }
+                
+            }
             
-            characteristics *c = accSet.accessoryAtIndex(aid)->characteristicsAtIndex(iid);
             
-            c->setValue(value);
-            
-            statusCode = 204;
             
         } else {
             return;
         }
     } else {
         //Error
+#if HomeKitLog == 1
+        printf("Ask for something I don't know\n");
+#endif
         printf("%s\n", request);
         printf("%s", path);
         statusCode = 404;
@@ -715,5 +777,9 @@ Content-Length: %u\r\n\r\n", protocol, statusCode, returnType, replyDataLen);
     *replyLen = len+replyDataLen;
     
     if (replyData) delete [] replyData;
+    
+#if HomeKitLog == 1 && HomeKitReplyHeaderLog==1
+    printf("Reply: %s\n", *reply);
+#endif
     
 }

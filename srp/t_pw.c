@@ -280,7 +280,7 @@ t_makepwent(tpw, user, pass, salt, confent)
 {
   BigInteger x, v, n, g;
   unsigned char dig[SHA_DIGESTSIZE];
-  SHA_CTX ctxt;
+  SHACTX ctxt;
 
   tpw->pebuf.name = tpw->userbuf;
   tpw->pebuf.salt.data = tpw->saltbuf;
