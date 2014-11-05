@@ -149,9 +149,9 @@ void *connectionLoop(void *argument) {
         do {
             char *buffer = new char[4096];
             len = read(*(int*)argument, buffer, 4096);
-            PHKNetworkMessage *msg = new PHKNetworkMessage(buffer);
+            PHKNetworkMessage msg(buffer);
             if (len > 0) {
-                if (!strcmp(msg->directory, "pair-setup")){
+                if (!strcmp(msg.directory, "pair-setup")){
                     
                     /*
                      * The processo f pair-setup
@@ -160,13 +160,12 @@ void *connectionLoop(void *argument) {
                     handlePairSeup(*(int*)argument, buffer);
                     
                 }
-                else if (!strcmp(msg->directory, "pair-verify")){
+                else if (!strcmp(msg.directory, "pair-verify")){
                     handlePairVerify(*(int*)argument, buffer);
                 }
             }
             
             delete [] buffer;
-            delete msg;
             
         } while (len > 0);
         
@@ -722,7 +721,7 @@ void handlePairVerify(int subSocket, char *buffer) {
             }
             poly1305_finish(&verifyContext, (unsigned char*)&reply[resultLen+2]);
             
-            len = send(subSocket, reply, resultLen+18, 0);
+            write(subSocket, reply, resultLen+18);
             
             delete [] reply;
             delete [] resultData;

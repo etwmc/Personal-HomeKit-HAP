@@ -12,6 +12,7 @@
 
 extern "C" {
 #include <stdlib.h>
+#include <stdint.h>
 }
 
 #include "PHKNetworkIP.h"
@@ -19,6 +20,10 @@ extern "C" {
 #include "PHKControllerRecord.h"
 
 #include "Configuration.h"
+
+extern "C" {
+#include "PHKArduinoLightInterface.h"
+}
 
 const char hapJsonType[] = "application/hap+json";
 const char pairingTlv8Type[] = "application/pairing+tlv8";
@@ -294,13 +299,11 @@ protected:
     const int premission;
 public:
     characteristics(int _iid, unsigned short _type, int _premission): iid(_iid), type(_type), premission(_premission) {}
-    virtual string value() { return ""; }
-    virtual void setValue(string str) {}
-    virtual string describe() {
-        return "";
-    }
+    virtual string value() = 0;
+    virtual void setValue(string str) = 0;
+    virtual string describe() = 0;
     bool writable() { return premission&premission_write; }
-    bool update() { return false&&premission&premission_update; }
+    bool update() { return premission&premission_update; }
 };
 
 //To store value of device state, subclass the following type
@@ -310,13 +313,12 @@ protected:
 public:
     boolCharacteristics(int _iid, unsigned short _type, int _premission): characteristics(_iid, _type, _premission) {}
     virtual string value() {
-        return _value? "true": "false";
+        if (_value)
+            return "1";
+        return "0";
     }
     virtual void setValue(string str) {
-        if (strncmp("true", str.c_str(), 4))
-            _value = true;
-        else
-            _value = false;
+        _value = (strncmp("true", str.c_str(), 4)==0);
     }
     virtual string describe() {
         return attribute(type, iid, premission, _value);
@@ -324,6 +326,7 @@ public:
 };
 
 class floatCharacteristics: public characteristics {
+protected:
     float _value;
     const float _minVal, _maxVal, _step;
     const unit _unit;
@@ -346,6 +349,7 @@ public:
 };
 
 class intCharacteristics: public characteristics {
+protected:
     int _value;
     const int _minVal, _maxVal, _step;
     const unit _unit;
@@ -368,6 +372,7 @@ public:
 };
 
 class stringCharacteristics: public characteristics {
+protected:
     string _value;
     const unsigned short maxLen;
 public:
@@ -387,7 +392,9 @@ public:
 //And situation with multiple accessory, renew
 class identifyCharacteristics: public boolCharacteristics {
 public:
-    identifyCharacteristics(int iid): boolCharacteristics(iid, charType_identify, premission_write) {}
+    identifyCharacteristics(int iid): boolCharacteristics(iid, charType_identify, premission_write) {
+        startIdentify();
+    }
     void setValue(string str) {
         boolCharacteristics::setValue(str);
         if (_value)
@@ -544,23 +551,48 @@ public:
     }
 };
 
+class lightPowerState: public boolCharacteristics {
+public:
+    lightPowerState(int index): boolCharacteristics(index, charType_on, premission_read|premission_write){}
+    void setValue(string str) {
+        this->boolCharacteristics::setValue(str);
+        if (_value) {
+            setLightStrength(255);
+        } else {
+            setLightStrength(0);
+        }
+    }
+};
+
+class lightBrightness: public intCharacteristics {
+public:
+    lightBrightness(int index):intCharacteristics(index, charType_brightness, premission_read|premission_write, 0, 100, 1, unit_percentage) {}
+    void setValue(string str) {
+        this->intCharacteristics::setValue(str);
+        setLightStrength(2.55*_value);
+    }
+};
+
 class lightService: public Service {
     stringCharacteristics serviceName;
-    boolCharacteristics powerState;
+    lightPowerState powerState;
+    lightBrightness brightness;
 public:
     lightService(int index): Service(index, charType_lightBulb),
-    serviceName(index+1, charType_serviceName, premission_read, 0),
-    powerState(index+2, charType_on, premission_read|premission_write){
+    serviceName(index+1, charType_serviceName, premission_read, 0), powerState(index+2), brightness(index+3)
+    {
         serviceName.setValue(deviceName);
         powerState.setValue("false");
     }
-    inline virtual short numberOfCharacteristics() { return 2; }
+    inline virtual short numberOfCharacteristics() { return 3; }
     inline virtual characteristics *characteristicsAtIndex(int index) {
         switch (index-1-serviceID) {
             case 0:
                 return &serviceName;
             case 1:
                 return &powerState;
+            case 2:
+                return &brightness;
         }
         return 0;
     }
@@ -601,8 +633,6 @@ public:
 MainAccessorySet accSet;
 
 void announce() {
-    const char *protocol = "HTTP/1.1";
-    const char *returnType = hapJsonType;
     
     string desc = accSet.describe();
     
@@ -704,26 +734,35 @@ void handleAccessory(const char *request, unsigned int requestLen, char **reply,
             //Read characteristics
             int aid = 0;    int iid = 0;
             sscanf(path, "/characteristics?id=%d.%d", &aid, &iid);
-            characteristics *c = accSet.accessoryAtIndex(aid)->characteristicsAtIndex(iid);
+            Accessory *a = accSet.accessoryAtIndex(aid);
+            if (a != NULL) {
+                characteristics *c = a->characteristicsAtIndex(iid);
+                if (c != NULL) {
 #if HomeKitLog == 1
-            printf("Ask for one characteristics: %d . %d\n", aid, iid);
+                    printf("Ask for one characteristics: %d . %d\n", aid, iid);
 #endif
-            char c1[2], c2[2];
-            sprintf(c1, "%d", aid);
-            sprintf(c2, "%d", iid);
-            string s[3] = {c1, c2, c->value()};
-            string k[3] = {"aid", "iid", "value"};
-            string result = dictionaryWrap(k, s, 3);
-            string d = "characteristics";
-            result = arrayWrap(&result, 1);
-            result = dictionaryWrap(&d, &result, 1);
-            
-            replyDataLen = result.length();
-            replyData = new char[replyDataLen+1];
-            replyData[replyDataLen] = 0;
-            bcopy(result.c_str(), replyData, replyDataLen);
-            statusCode = 200;
-            
+                    char c1[3], c2[3];
+                    sprintf(c1, "%d", aid);
+                    sprintf(c2, "%d", iid);
+                    string s[3] = {string(c1), string(c2), c->value()};
+                    string k[3] = {"aid", "iid", "value"};
+                    string result = dictionaryWrap(k, s, 3);
+                    string d = "characteristics";
+                    result = arrayWrap(&result, 1);
+                    result = dictionaryWrap(&d, &result, 1);
+                    
+                    replyDataLen = result.length();
+                    replyData = new char[replyDataLen+1];
+                    replyData[replyDataLen] = 0;
+                    bcopy(result.c_str(), replyData, replyDataLen);
+                    statusCode = 200;
+                } else {
+                    statusCode = 404;
+                }
+
+            } else {
+                statusCode = 404;
+            }
         } else if (strncmp(method, "PUT", 3) == 0) {
             //Change characteristics
             int aid = 0;    int iid = 0; char value[16];
@@ -738,14 +777,13 @@ void handleAccessory(const char *request, unsigned int requestLen, char **reply,
                 characteristics *c = a->characteristicsAtIndex(iid);
                 if (c==NULL) {
                 } else {
-                    characteristics *c = a->characteristicsAtIndex(iid);
                     if (c->writable()) {
                         c->setValue(value);
                         
                         statusCode = 204;
-                        if (c->update())
+                        if (c->update());
                             //Broadcast change to everyone
-                            announce();
+                            //announce();
                     } else {
                         statusCode = 400;
                     }
@@ -768,15 +806,18 @@ void handleAccessory(const char *request, unsigned int requestLen, char **reply,
         statusCode = 404;
     }
     
-    *reply = new char[1024];
-    int len = snprintf(*reply, 1024, "%s %d OK\r\n\
+    *reply = new char[1536];
+    bzero(*reply, 1536);
+    int len = snprintf(*reply, 1536, "%s %d OK\r\n\
 Content-Type: %s\r\n\
 Content-Length: %u\r\n\r\n", protocol, statusCode, returnType, replyDataLen);
     
-    bcopy(replyData, &(*reply)[len], replyDataLen);
-    *replyLen = len+replyDataLen;
+    (*replyLen) = len+replyDataLen;
     
-    if (replyData) delete [] replyData;
+    if (replyData) {
+        bcopy(replyData, &(*reply)[len], replyDataLen+1);
+        delete [] replyData;
+    }
     
 #if HomeKitLog == 1 && HomeKitReplyHeaderLog==1
     printf("Reply: %s\n", *reply);
