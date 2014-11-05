@@ -29,7 +29,7 @@ After copy the codes, please follow these steps:
 To create your own service, please reference to the implement done between line 517-line 630. You can add characteristic in a service, service in an accessory, and accessory in accessory set. However, accessory id is unique in accessory set, and characteristic id is unique in accessory. (NOT SERVICE)<br>
 
 (Please beware the number of characteristic, service and accessory, and the getter based on id is hard coded in the numberOf_ and _AtIndex. This is done to reduce the multithread complexity. So if you are going to implement a dynamic setting (for example, make a accessory bridge with PnP accessories), please keep the function be thread-safe at all time. )
-
+<br>
 4. Then, make and enjoy. 
 ===============
 
