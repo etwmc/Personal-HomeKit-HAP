@@ -10,9 +10,10 @@
 #include <string.h>
 #include <strings.h>
 
+#define __STDC_LIMIT_MACROS
+#include <stdint.h>
 extern "C" {
 #include <stdlib.h>
-#include <stdint.h>
 }
 
 #include "PHKNetworkIP.h"
