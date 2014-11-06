@@ -1,7 +1,7 @@
 LINK = -lssl -lcrypto -ldl -pthread
 CFLAG = -O3
-CC = clang
-CPP = clang++
+CC = gcc
+CPP = g++
 ifeq ($(OS),Windows_NT)
     ifeq ($(PROCESSOR_ARCHITECTURE),AMD64)
     endif
