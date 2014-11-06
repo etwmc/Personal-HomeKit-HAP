@@ -1,8 +1,8 @@
 #PersonalHomeKit
 ===============
 Dear Lawyer of Apple, 
-If you want me to pull down the code, just send me an email. (No phone call, I don't pick up unknown number. )<br>
-I'm a reasonable kid, and I like Apple, so no need for those "illegal" claim, just talk to me. 
+===============
+If you want me to pull down the code, just send me an email. (No phone call, I don't pick up unknown number. ) I'm a reasonable kid, and I like Apple, so no need for those "illegal" claim, just talk to me. 
 ===============
 Build method: 
 After copy the codes, please follow these steps: 
