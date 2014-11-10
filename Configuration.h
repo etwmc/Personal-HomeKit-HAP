@@ -21,6 +21,11 @@
 #define controllerRecordsAddress "/Users/waimanchan/controller" //Where to store the client keys
 
 //Number of client
+/*
+ * BEWARE: Never set the number of client to 1
+ * iOS HomeKit pair setup socket will not release until the pair verify stage start
+ * So you will never got the pair corrected, as it is incomplete (The error require manually reset HomeKit setting
+ */
 #define numberOfClient 20
 
 //If you compiling this to microcontroller, set it to 1

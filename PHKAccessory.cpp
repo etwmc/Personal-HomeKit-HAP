@@ -7,88 +7,12 @@
 //
 
 #include "PHKAccessory.h"
-#include <string.h>
-#include <strings.h>
 
-#define __STDC_LIMIT_MACROS
-#include <stdint.h>
-extern "C" {
-#include <stdlib.h>
-}
-
-#include "PHKNetworkIP.h"
-
-#include "PHKControllerRecord.h"
-
-#include "Configuration.h"
-
-extern "C" {
-#include "PHKArduinoLightInterface.h"
-}
 
 const char hapJsonType[] = "application/hap+json";
 const char pairingTlv8Type[] = "application/pairing+tlv8";
 
-bool lightOn = false;
-
-using namespace std;
-
-typedef enum {
-    charType_adminOnlyAccess    = 0x1,
-    charType_audioFeedback      = 0x5,
-    charType_brightness         = 0x8,
-    charType_coolingThreshold   = 0xD,
-    charType_currentDoorState   = 0xE,
-    charType_currentHeatCoolMode= 0xF,
-    charType_currentHumidity    = 0x10,
-    charType_currentTemperature = 0x11,
-    charType_heatingThreshold   = 0x12,
-    charType_hue                = 0x13,
-    charType_identify           = 0x14,
-    charType_lockControlPoint   = 0x19,
-    charType_lockAutoTimeout    = 0x1A,
-    charType_lockLastAction     = 0x1C,
-    charType_lockCurrentState   = 0x1D,
-    charType_lockTargetState    = 0x1E,
-    charType_logs               = 0x1F,
-    charType_manufactuer        = 0x20,
-    charType_modelName          = 0x21,
-    charType_motionDetect       = 0x22,
-    charType_serviceName        = 0x23,
-    charType_obstruction        = 0x24,
-    charType_on                 = 0x25,
-    charType_outletUse          = 0x26,
-    charType_saturation         = 0x2F,
-    charType_serialNumber       = 0x30,
-    charType_targetDoorState    = 0x32,
-    charType_targetHeatCoolMode = 0x33,
-    charType_targetHumidity     = 0x34,
-    charType_targetTemperature  = 0x35,
-    charType_temperatureUnit    = 0x36,
-    charType_version            = 0x37,
-#pragma - The following is service provide
-    charType_accessoryInfo      = 0x3E,
-    charType_fan                = 0x3F,
-    charType_garageDoorOpener   = 0x41,
-    charType_lightBulb          = 0x43,
-    charType_lockMechanism      = 0x45,
-    charType_outlet             = 0x47,
-    charType_switch             = 0x49,
-    charType_thermostat         = 0x4A
-} charType;
-
-enum {
-    premission_read = 1,
-    premission_write = 1 << 1,
-    premission_update = 1 << 2  //Update = Accessory will notice the controller
-};
-
-typedef enum {
-    unit_none = 0,
-    unit_celsius,
-    unit_percentage,
-    unit_arcDegree
-} unit;
+extern AccessorySet *accSet;
 
 //Wrap to JSON
 inline string wrap(const char *str) { return (string)"\""+str+"\""; }
@@ -293,349 +217,96 @@ inline string dictionaryWrap(string *key, string *value, unsigned short len) {
     return result;
 }
 
-class characteristics {
-protected:
-    const int iid;
-    const unsigned short type;
-    const int premission;
-public:
-    characteristics(int _iid, unsigned short _type, int _premission): iid(_iid), type(_type), premission(_premission) {}
-    virtual string value() = 0;
-    virtual void setValue(string str) = 0;
-    virtual string describe() = 0;
-    bool writable() { return premission&premission_write; }
-    bool update() { return premission&premission_update; }
-};
 
-//To store value of device state, subclass the following type
-class boolCharacteristics: public characteristics {
-protected:
-    bool _value;
-public:
-    boolCharacteristics(int _iid, unsigned short _type, int _premission): characteristics(_iid, _type, _premission) {}
-    virtual string value() {
-        if (_value)
-            return "1";
-        return "0";
-    }
-    virtual void setValue(string str) {
-        _value = (strncmp("true", str.c_str(), 4)==0);
-    }
-    virtual string describe() {
-        return attribute(type, iid, premission, _value);
-    }
-};
+string boolCharacteristics::describe() {
+    return attribute(type, iid, premission, _value);
+}
 
-class floatCharacteristics: public characteristics {
-protected:
-    float _value;
-    const float _minVal, _maxVal, _step;
-    const unit _unit;
-public:
-    floatCharacteristics(int _iid, unsigned short _type, int _premission, float minVal, float maxVal, float step, unit charUnit): characteristics(_iid, _type, _premission), _minVal(minVal), _maxVal(maxVal), _step(step), _unit(charUnit) {}
-    virtual string value() {
-        char temp[16];
-        snprintf(temp, 16, "%f", _value);
-        return temp;
-    }
-    virtual void setValue(string str) {
-        float temp = atof(str.c_str());
-        if (temp == temp) {
-            _value = temp;
-        }
-    }
-    virtual string describe() {
-        return attribute(type, iid, premission, _value, _minVal, _maxVal, _step, _unit);
-    }
-};
+string floatCharacteristics::describe() {
+    return attribute(type, iid, premission, _value, _minVal, _maxVal, _step, _unit);
+}
 
-class intCharacteristics: public characteristics {
-protected:
-    int _value;
-    const int _minVal, _maxVal, _step;
-    const unit _unit;
-public:
-    intCharacteristics(int _iid, unsigned short _type, int _premission, int minVal, int maxVal, int step, unit charUnit): characteristics(_iid, _type, _premission), _minVal(minVal), _maxVal(maxVal), _step(step), _unit(charUnit) {}
-    virtual string value() {
-        char temp[16];
-        snprintf(temp, 16, "%d", _value);
-        return temp;
-    }
-    virtual void setValue(string str) {
-        float temp = atoi(str.c_str());
-        if (temp == temp) {
-            _value = temp;
-        }
-    }
-    virtual string describe() {
-        return attribute(type, iid, premission, _value, _minVal, _maxVal, _step, _unit);
-    }
-};
+string intCharacteristics::describe() {
+    return attribute(type, iid, premission, _value, _minVal, _maxVal, _step, _unit);
+}
 
-class stringCharacteristics: public characteristics {
-protected:
-    string _value;
-    const unsigned short maxLen;
-public:
-    stringCharacteristics(int _iid, unsigned short _type, int _premission, unsigned short _maxLen): characteristics(_iid, _type, _premission), maxLen(_maxLen) {}
-    virtual string value() {
-        return _value;
-    }
-    virtual void setValue(string str) {
-        _value = str;
-    }
-    virtual string describe() {
-        return attribute(type, iid, premission, _value, maxLen);
-    }
-};
+string stringCharacteristics::describe() {
+    return attribute(type, iid, premission, _value, maxLen);
+}
 
-//To identify the accessory, finish the function identify() with the method
-//And situation with multiple accessory, renew
-class identifyCharacteristics: public boolCharacteristics {
-public:
-    identifyCharacteristics(int iid): boolCharacteristics(iid, charType_identify, premission_write) {
-        startIdentify();
-    }
-    void setValue(string str) {
-        boolCharacteristics::setValue(str);
-        if (_value)
-            identify();
-    }
-    virtual void identify() {}
-    virtual string describe() {
-        string a = boolCharacteristics::describe();
-        return a;
-    }
-};
+string identifyCharacteristics::describe() {
+    string a = boolCharacteristics::describe();
+    return a;
+}
 
-//Abstract Layer of object
-class Service {
-public:
-    const int serviceID, uuid;
-    Service(int _serviceID, int _uuid): serviceID(_serviceID), uuid(_uuid) {}
-    inline virtual short numberOfCharacteristics() { return 0; }
-    inline virtual characteristics *characteristicsAtIndex(int index) { return 0; }
-    string describe() {
-        string keys[3] = {"iid", "type", "characteristics"};
-        string values[3];
-        {
-            char temp[8];
-            snprintf(temp, 8, "%d", serviceID);
-            values[0] = temp;
-        }
-        {
-            char temp[8];
-            snprintf(temp, 8, "\"%X\"", uuid);
-            values[1] = temp;
-        }
-        {
-            int no = numberOfCharacteristics();
-            string *chars = new string[no];
-            for (int i = 0; i < no; i++) {
-                chars[i] = characteristicsAtIndex(i+1+serviceID)->describe();
-            }
-            values[2] = arrayWrap(chars, no);
-            delete [] chars;
-        }
-        return dictionaryWrap(keys, values, 3);
-    }
-};
-
-class Accessory {
-public:
-    const int aid;
-    Accessory(int _aid): aid(_aid) {}
-    virtual short numberOfService() { return 0; }
-    virtual Service *serviceAtIndex(int index) {
-        return 0;
-    }
-    characteristics *characteristicsAtIndex(int index) {
-        unsigned short no = numberOfService();
-        for (int i = 1; i <= no; i++) {
-            Service *s1 = serviceAtIndex(i+1);
-            if (s1) {
-                if (index < s1->serviceID) {
-                    return serviceAtIndex(i)->characteristicsAtIndex(index);
-                }
-            }
-            else
-                return serviceAtIndex(i)->characteristicsAtIndex(index);
-        }
-        return 0;
-    }
-    string describe() {
-        string keys[2];
-        string values[2];
-        
-        {
-            keys[0] = "aid";
-            char temp[8];
-            sprintf(temp, "%d", aid);
-            values[0] = temp;
-        }
-                   
-        {
-            //Form services list
-            int noOfService = numberOfService();
-            string *services = new string[noOfService];
-            for (int i = 0; i < noOfService; i++) {
-                services[i] = serviceAtIndex(i+1)->describe();
-            }
-            keys[1] = "services";
-            values[1] = arrayWrap(services, noOfService);
-            delete [] services;
-        }
-        
-        string result = dictionaryWrap(keys, values, 2);
-        return result;
-    }
-};
-
-class AccessorySet {
-    Accessory *mainAccessory;
-public:
-    virtual short numberOfAccessory() {
-        return 0;
-    }
-    virtual Accessory *accessoryAtIndex(int index) {
-        return 0;
-    }
-    string describe() {
-        int numberOfAcc = numberOfAccessory();
-        string *desc = new string[numberOfAcc];
-        for (int i = 0; i < numberOfAcc; i++) {
-            desc[i] = accessoryAtIndex(i)->describe();
-        }
-        string result = arrayWrap(desc, numberOfAcc);
-        delete [] desc;
-        string key = "accessories";
-        result = dictionaryWrap(&key, &result, 1);
-        return result;
-    }
-};
-
-//For all the service type, subclass from Service or its subclass
-//Instance ID must be bigger than 0
-class infoService: public Service {
-    stringCharacteristics name;
-    stringCharacteristics manufactuer;
-    stringCharacteristics modelName;
-    stringCharacteristics serialNumber;
-    identifyCharacteristics identify;
-public:
-    infoService(int index): Service(index, charType_accessoryInfo),
-    name(index+1, charType_serviceName, premission_read, 0),
-    manufactuer(index+2, charType_manufactuer, premission_read, 0),
-    modelName(index+3, charType_modelName, premission_read, 0),
-    serialNumber(index+4, charType_serialNumber, premission_read, 0),
-    identify(index+5) {
-        name.setValue(deviceName);
-        manufactuer.setValue(manufactuerName);
-        modelName.setValue(deviceName);
-        serialNumber.setValue(deviceUUID);
-    }
-    inline virtual short numberOfCharacteristics() { return 5; }
-    inline virtual characteristics *characteristicsAtIndex(int index) {
-        switch (index-1-serviceID) {
-            case 0:
-                return &name;
-            case 1:
-                return &manufactuer;
-            case 2:
-                return &modelName;
-            case 3:
-                return &serialNumber;
-            case 4:
-                return &identify;
-        }
-        return 0;
-    }
-};
-
-class lightPowerState: public boolCharacteristics {
-public:
-    lightPowerState(int index): boolCharacteristics(index, charType_on, premission_read|premission_write){}
-    void setValue(string str) {
-        this->boolCharacteristics::setValue(str);
-        if (_value) {
-            setLightStrength(255);
-        } else {
-            setLightStrength(0);
-        }
-    }
-};
-
-class lightBrightness: public intCharacteristics {
-public:
-    lightBrightness(int index):intCharacteristics(index, charType_brightness, premission_read|premission_write, 0, 100, 1, unit_percentage) {}
-    void setValue(string str) {
-        this->intCharacteristics::setValue(str);
-        setLightStrength(2.55*_value);
-    }
-};
-
-class lightService: public Service {
-    stringCharacteristics serviceName;
-    lightPowerState powerState;
-    lightBrightness brightness;
-public:
-    lightService(int index): Service(index, charType_lightBulb),
-    serviceName(index+1, charType_serviceName, premission_read, 0), powerState(index+2), brightness(index+3)
+string Service::describe() {
+    string keys[3] = {"iid", "type", "characteristics"};
+    string values[3];
     {
-        serviceName.setValue(deviceName);
-        powerState.setValue("false");
+        char temp[8];
+        snprintf(temp, 8, "%d", serviceID);
+        values[0] = temp;
     }
-    inline virtual short numberOfCharacteristics() { return 3; }
-    inline virtual characteristics *characteristicsAtIndex(int index) {
-        switch (index-1-serviceID) {
-            case 0:
-                return &serviceName;
-            case 1:
-                return &powerState;
-            case 2:
-                return &brightness;
+    {
+        char temp[8];
+        snprintf(temp, 8, "\"%X\"", uuid);
+        values[1] = temp;
+    }
+    {
+        int no = numberOfCharacteristics();
+        string *chars = new string[no];
+        for (int i = 0; i < no; i++) {
+            chars[i] = characteristicsAtIndex(i+1+serviceID)->describe();
         }
-        return 0;
+        values[2] = arrayWrap(chars, no);
+        delete [] chars;
     }
-};
+    return dictionaryWrap(keys, values, 3);
+}
 
-
-
-//For bridge, create more than one subclass, and insert in main accessory
-//Also change the MainAccessorySet
-class MainAccessory: public Accessory {
-    infoService info;
-    lightService light;
-public:
-    MainAccessory(int aid): Accessory(aid),
-    info(1), light(info.serviceID+info.numberOfCharacteristics()+1) {}
-    inline virtual short numberOfService() { return 2; }
-    inline virtual Service *serviceAtIndex(int index) {
-        switch (index-1) {
-            case 0:
-                return &info;
-            case 1:
-                return &light;
+string Accessory::describe() {
+    string keys[2];
+    string values[2];
+    
+    {
+        keys[0] = "aid";
+        char temp[8];
+        sprintf(temp, "%d", aid);
+        values[0] = temp;
+    }
+    
+    {
+        //Form services list
+        int noOfService = numberOfService();
+        string *services = new string[noOfService];
+        for (int i = 0; i < noOfService; i++) {
+            services[i] = serviceAtIndex(i+1)->describe();
         }
-        return 0;
+        keys[1] = "services";
+        values[1] = arrayWrap(services, noOfService);
+        delete [] services;
     }
-};
+    
+    string result = dictionaryWrap(keys, values, 2);
+    return result;
+}
 
-//For bridge, change the subject to dynamic assign
-class MainAccessorySet: public AccessorySet {
-    MainAccessory acc;
-public:
-    MainAccessorySet(): acc(1) {
+string AccessorySet::describe() {
+    int numberOfAcc = numberOfAccessory();
+    string *desc = new string[numberOfAcc];
+    for (int i = 0; i < numberOfAcc; i++) {
+        desc[i] = accessoryAtIndex(i)->describe();
     }
-    short numberOfAccessory() { return 1; }
-    Accessory * accessoryAtIndex(int index) { return &acc; }
-};
-
-MainAccessorySet accSet;
+    string result = arrayWrap(desc, numberOfAcc);
+    delete [] desc;
+    string key = "accessories";
+    result = dictionaryWrap(&key, &result, 1);
+    return result;
+}
 
 void announce() {
     
-    string desc = accSet.describe();
+    string desc = accSet->describe();
     
     char *reply = new char[1024];
     int len = snprintf(reply, 1024, "EVENT/1.1 200 OK\r\n\
@@ -647,7 +318,7 @@ void announce() {
 
 void handleAccessory(const char *request, unsigned int requestLen, char **reply, unsigned int *replyLen) {
 #if HomeKitLog == 1
-    printf("Receive request\n");
+    printf("Receive request: %s\n", request);
 #endif
     int index = 5;
     char method[5];
@@ -689,7 +360,7 @@ void handleAccessory(const char *request, unsigned int requestLen, char **reply,
         printf("Ask for accessories info\n");
 #endif
         statusCode = 200;
-        string desc = accSet.describe();
+        string desc = accSet->describe();
         replyDataLen = desc.length();
         replyData = new char[replyDataLen+1];
         bcopy(desc.c_str(), replyData, replyDataLen);
@@ -735,7 +406,7 @@ void handleAccessory(const char *request, unsigned int requestLen, char **reply,
             //Read characteristics
             int aid = 0;    int iid = 0;
             sscanf(path, "/characteristics?id=%d.%d", &aid, &iid);
-            Accessory *a = accSet.accessoryAtIndex(aid);
+            Accessory *a = accSet->accessoryAtIndex(aid);
             if (a != NULL) {
                 characteristics *c = a->characteristicsAtIndex(iid);
                 if (c != NULL) {
@@ -768,15 +439,19 @@ void handleAccessory(const char *request, unsigned int requestLen, char **reply,
             //Change characteristics
             int aid = 0;    int iid = 0; char value[16];
             sscanf(dataPtr, "{\"characteristics\":[{\"aid\":%d,\"iid\":%d,\"value\":%s}]}", &aid, &iid, value);
+            if (aid ==0 && iid == 0) {
+                sscanf(dataPtr, "{\"characteristics\":[{\"remote\":true,\"value\":%[^,]s,\"aid\":%d,\"iid\":%d}]}", value, &aid, &iid);
+            }
 #if HomeKitLog == 1
             printf("Ask to change one characteristics: %d . %d -> %s\n", aid, iid, value);
 #endif
-            Accessory *a = accSet.accessoryAtIndex(aid);
+            Accessory *a = accSet->accessoryAtIndex(aid);
             if (a==NULL) {
                 statusCode = 400;
             } else {
                 characteristics *c = a->characteristicsAtIndex(iid);
                 if (c==NULL) {
+                    statusCode = 400;
                 } else {
                     if (c->writable()) {
                         c->setValue(value);

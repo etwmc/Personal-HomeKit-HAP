@@ -330,6 +330,7 @@ void handlePairSeup(int subSocket, char *buffer) {
                     /*
                      * HAK Pair Setup M6
                      */
+                    printf("Chacha20-Poly1305 on M5 packet check out\n");
                     char *decryptedData = new char[packageLen-16];
                     bzero(decryptedData, packageLen-16);
                     chacha20_decrypt(&chacha20, (const uint8_t *)encryptedData, (uint8_t *)decryptedData, packageLen-16);
@@ -355,7 +356,10 @@ void handlePairSeup(int subSocket, char *buffer) {
                     int ed25519_err = ed25519_sign_open((const unsigned char*)controllerHash, 100, (const unsigned char*)controllerPublicKey, (const unsigned char*)controllerSignature);
                     delete subTLV8;
                     
-                    if (ed25519_err) return;
+                    if (ed25519_err) {
+                        printf("Problem\n");
+                        return;
+                    }
                     else {
                         PHKNetworkMessageData *returnTLV8 = new PHKNetworkMessageData();
                         
@@ -431,6 +435,7 @@ void handlePairSeup(int subSocket, char *buffer) {
                         mResponse.data.addRecord(tlv8Record);
                         
                         delete returnTLV8;
+                        printf("Send M6\n");
                     }
                     
                 }
