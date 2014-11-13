@@ -9,8 +9,8 @@
 #ifndef Workbench_Configuration_h
 #define Workbench_Configuration_h
 
-#define HomeKitLog 1
-#define HomeKitReplyHeaderLog 1
+#define HomeKitLog 0
+#define HomeKitReplyHeaderLog 0
 
 //Device Setting
 #define deviceName "Night Light"    //Name
@@ -18,7 +18,7 @@
 #define manufactuerName "ET Chan"   //Manufactuer
 #define devicePassword "523-12-643" //Password
 #define deviceUUID "9FCF7180-6CAA-4174-ABC0-E3FAE58E3ADD"   //UUID, for pair verify
-#define controllerRecordsAddress "/Users/waimanchan/controller" //Where to store the client keys
+#define controllerRecordsAddress "/home/m/controller" //Where to store the client keys
 
 //Number of client
 /*

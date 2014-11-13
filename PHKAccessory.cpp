@@ -366,13 +366,14 @@ void handleAccessory(const char *request, unsigned int requestLen, char **reply,
         bcopy(desc.c_str(), replyData, replyDataLen);
         replyData[replyDataLen] = 0;
     } else if (strcmp(path, "/pairings") == 0) {
-        //Pairing with new user
-#if HomeKitLog == 1
-        printf("Add new user\n");
-#endif
         PHKNetworkMessage msg(request);
         statusCode = 200;
+        printf("%d\n", *msg.data.dataPtrForIndex(0));
         if (*msg.data.dataPtrForIndex(0) == 3) {
+            //Pairing with new user
+#if HomeKitLog == 1
+            printf("Add new user\n");
+#endif
             PHKKeyRecord controllerRec;
             bcopy(msg.data.dataPtrForIndex(3), controllerRec.publicKey, 32);
             bcopy(msg.data.dataPtrForIndex(1), controllerRec.controllerID, 36);

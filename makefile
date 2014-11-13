@@ -16,9 +16,10 @@ else
     endif
     UNAME_P := $(shell uname -p)
 endif
+OBJFILE = chacha20.o curve25519.o ed25519.o poly1305.o rfc6234-master/hkdf.o rfc6234-master/hmac.o rfc6234-master/sha.o main.o PHKAccessory.o PHKControllerRecord.o PHKNetworkIP.o PHKArduinoLightInterface.o srp/srp.o srp/cstr.o srp/t_math.o srp/srp6_server.o srp/t_conf.o srp/t_conv.o srp/t_pw.o srp/t_misc.o srp/t_truerand.o srp/t_read.o Accessory.o
 all: PHK
-PHK:chacha20.o curve25519.o ed25519.o poly1305.o rfc6234-master/hkdf.o rfc6234-master/hmac.o rfc6234-master/sha.o main.o PHKAccessory.o PHKControllerRecord.o PHKNetworkIP.o PHKArduinoLightInterface.o srp/srp.o srp/cstr.o srp/t_math.o srp/srp6_server.o srp/t_conf.o srp/t_conv.o srp/t_pw.o srp/t_misc.o srp/t_truerand.o srp/t_read.o Accessory.o
-	$(CPP) $(CFLAG) -o PHK $? $(LINK)
+PHK: $(OBJFILE)
+	$(CPP) $(CFLAG) -o PHK $(OBJFILE) $(LINK)
 chacha20.o: Chacha20/chacha20_simple.c Chacha20/chacha20_simple.h
 	$(CC) $(CFLAG) -w -o chacha20.o -c Chacha20/chacha20_simple.c
 curve25519.o: curve25519/curve25519-donna.c curve25519/curve25519-donna.h
