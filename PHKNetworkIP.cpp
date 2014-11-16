@@ -111,13 +111,13 @@ TXTRecordRef PHKNetworkIP::buildTXTRecord() {
     
     uint32_t stn = 1;
     char stn_buff[11];
-    numbytes = sprintf(ccn_buff, "%"PRIu32"", ccn);
+    numbytes = sprintf(ccn_buff, "%d", ccn);
     TXTRecordSetValue(&txtRecord, "c#", numbytes, ccn_buff); //Current Config number
     TXTRecordSetValue(&txtRecord, "ff", 4, "0x01"); //feature flag, 0x01 Supports MFi-pair
     TXTRecordSetValue(&txtRecord, "id", 17, deviceIdentity); //Device id
     TXTRecordSetValue(&txtRecord, "md", strlen(deviceName), deviceName); //Model Name
 //	TXTRecordSetValue(&txtRecord, "pv", 3, "1.0"); //Version, required if not 1.0
-    numbytes = sprintf(stn_buff, "%"PRIu32"", stn);
+    numbytes = sprintf(stn_buff, "%d", stn);
     TXTRecordSetValue(&txtRecord, "s#", numbytes, stn_buff); //Current Status number
 //  TXTRecordSetValue(&txtRecord, "sf", 1, "1"); //Status Flags, required if non zero
     return txtRecord;

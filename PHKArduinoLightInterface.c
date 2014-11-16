@@ -49,13 +49,13 @@ void setupPort() {
 }
 
 void startIdentify() {
-    write(serialPort, "-1\n", 3);
+    write(serialPort, "-1", 3);
 }
 
 void setLightStrength(int strengthLevel) {
     strengthLevel = strengthLevel < 0? 0: strengthLevel;
     strengthLevel = strengthLevel > 255? 255: strengthLevel;
     char temp[6];
-    int len = snprintf(temp, 6, "%d\n", strengthLevel);
+    int len = snprintf(temp, 6, "%d", strengthLevel);
     write(serialPort, temp, len);
 }

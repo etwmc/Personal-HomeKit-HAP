@@ -184,7 +184,9 @@ public:
         if (_value)
             identify();
     }
-    virtual void identify() {}
+    virtual void identify() {
+        startIdentify();
+    }
     virtual string describe();
 };
 
