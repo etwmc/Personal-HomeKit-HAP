@@ -103,6 +103,7 @@ void registerFail(DNSServiceRef sdRef, DNSRecordRef RecordRef, DNSServiceFlags f
 
 TXTRecordRef PHKNetworkIP::buildTXTRecord() {
     TXTRecordRef txtRecord;
+    TXTRecordCreate(&txtRecord, 0, NULL);
     
     int numbytes;
     
