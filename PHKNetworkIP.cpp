@@ -103,14 +103,23 @@ void registerFail(DNSServiceRef sdRef, DNSRecordRef RecordRef, DNSServiceFlags f
 
 TXTRecordRef PHKNetworkIP::buildTXTRecord() {
     TXTRecordRef txtRecord;
-    TXTRecordCreate(&txtRecord, 0, NULL);
-    TXTRecordSetValue(&txtRecord, "pv", 3, "1.0");  //Version
-    TXTRecordSetValue(&txtRecord, "id", 17, deviceIdentity);    //Device id
-    TXTRecordSetValue(&txtRecord, "c#", 1, "1");    //Number of User?
-    TXTRecordSetValue(&txtRecord, "s#", 1, "2");    //Number of service
-    TXTRecordSetValue(&txtRecord, "sf", 1, "1");    //No idea what it is
-    TXTRecordSetValue(&txtRecord, "ff", 1, "0");    //1 for MFI product
-    TXTRecordSetValue(&txtRecord, "md", strlen(deviceName), deviceName);    //Model Name
+    
+    int numbytes;
+    
+    uint32_t ccn = 1;  
+    char ccn_buff[11];
+    
+    uint32_t stn = 1;
+    char stn_buff[11];
+    numbytes = sprintf(ccn_buff, "%"PRIu32"", ccn);
+    TXTRecordSetValue(&txtRecord, "c#", numbytes, ccn_buff); //Current Config number
+    TXTRecordSetValue(&txtRecord, "ff", 4, "0x01"); //feature flag, 0x01 Supports MFi-pair
+    TXTRecordSetValue(&txtRecord, "id", 17, deviceIdentity); //Device id
+    TXTRecordSetValue(&txtRecord, "md", strlen(deviceName), deviceName); //Model Name
+//	TXTRecordSetValue(&txtRecord, "pv", 3, "1.0"); //Version, required if not 1.0
+    numbytes = sprintf(stn_buff, "%"PRIu32"", stn);
+    TXTRecordSetValue(&txtRecord, "s#", numbytes, stn_buff); //Current Status number
+//  TXTRecordSetValue(&txtRecord, "sf", 1, "1"); //Status Flags, required if non zero
     return txtRecord;
 }
 
