@@ -16,8 +16,10 @@ public:
     void setValue(string str) {
         this->boolCharacteristics::setValue(str);
         if (_value) {
+            lightStength = 255;
             setLightStrength(255);
         } else {
+            lightStength = 0;
             setLightStrength(0);
         }
     }
