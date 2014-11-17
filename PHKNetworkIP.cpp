@@ -114,7 +114,7 @@ TXTRecordRef PHKNetworkIP::buildTXTRecord() {
     char stn_buff[11];
     numbytes = sprintf(ccn_buff, "%d", ccn);
     TXTRecordSetValue(&txtRecord, "c#", numbytes, ccn_buff); //Current Config number
-    TXTRecordSetValue(&txtRecord, "ff", 4, "0x01"); //feature flag, 0x01 Supports MFi-pair
+    TXTRecordSetValue(&txtRecord, "ff", 4, "0x00"); //feature flag, 0x01 Supports MFi-pair
     TXTRecordSetValue(&txtRecord, "id", 17, deviceIdentity); //Device id
     TXTRecordSetValue(&txtRecord, "md", strlen(deviceName), deviceName); //Model Name
 //	TXTRecordSetValue(&txtRecord, "pv", 3, "1.0"); //Version, required if not 1.0
@@ -293,7 +293,11 @@ void handlePairSeup(int subSocket, char *buffer) {
                 const char salt[] = "Pair-Setup-Encrypt-Salt";
                 const char info[] = "Pair-Setup-Encrypt-Info";
                 int i = hkdf((const unsigned char*)salt, strlen(salt), (const unsigned char*)secretKey->data, secretKey->length, (const unsigned char*)info, strlen(info), (uint8_t*)sessionKey, 32);
-                if (i != 0) return;
+                printf("%d", i);
+                if (i != 0) {
+                    printf("Error on HKDF in M4\n");
+                    return;
+                }
             }
                 break;
             case 5: {
