@@ -14,7 +14,7 @@
 void setupPort();
 void startIdentify();
 void setLightStrength(int strengthLevel);
-inline void turnOnLight() { setLightStrength(255); }
-inline void turnOffLight() { setLightStrength(0); }
+//You need to implement this to use Fan+Light configuration
+void setFanSpeed(int strengthLevel);
 
 #endif /* defined(__Workbench__PHKArduinoLightInterface__) */

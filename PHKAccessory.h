@@ -62,7 +62,7 @@ typedef enum {
     charType_version            = 0x37,
 #pragma - The following is service provide
     charType_accessoryInfo      = 0x3E,
-    charType_fan                = 0x3F,
+    charType_fan                = 0x40,
     charType_garageDoorOpener   = 0x41,
     charType_lightBulb          = 0x43,
     charType_lockMechanism      = 0x45,
@@ -90,7 +90,7 @@ protected:
     const unsigned short type;
     const int premission;
 public:
-    characteristics(int _iid, unsigned short _type, int _premission): iid(_iid), type(_type), premission(_premission) {}
+    characteristics(int &_iid, unsigned short _type, int _premission): iid(++_iid), type(_type), premission(_premission) {}
     virtual string value() = 0;
     virtual void setValue(string str) = 0;
     virtual string describe() = 0;
@@ -103,7 +103,7 @@ class boolCharacteristics: public characteristics {
 protected:
     bool _value;
 public:
-    boolCharacteristics(int _iid, unsigned short _type, int _premission): characteristics(_iid, _type, _premission) {}
+    boolCharacteristics(int &_iid, unsigned short _type, int _premission): characteristics(_iid, _type, _premission) {}
     virtual string value() {
         if (_value)
             return "1";
@@ -121,7 +121,7 @@ protected:
     const float _minVal, _maxVal, _step;
     const unit _unit;
 public:
-    floatCharacteristics(int _iid, unsigned short _type, int _premission, float minVal, float maxVal, float step, unit charUnit): characteristics(_iid, _type, _premission), _minVal(minVal), _maxVal(maxVal), _step(step), _unit(charUnit) {}
+    floatCharacteristics(int &_iid, unsigned short _type, int _premission, float minVal, float maxVal, float step, unit charUnit): characteristics(_iid, _type, _premission), _minVal(minVal), _maxVal(maxVal), _step(step), _unit(charUnit) {}
     virtual string value() {
         char temp[16];
         snprintf(temp, 16, "%f", _value);
@@ -142,7 +142,9 @@ protected:
     const int _minVal, _maxVal, _step;
     const unit _unit;
 public:
-    intCharacteristics(int _iid, unsigned short _type, int _premission, int minVal, int maxVal, int step, unit charUnit): characteristics(_iid, _type, _premission), _minVal(minVal), _maxVal(maxVal), _step(step), _unit(charUnit) {}
+    intCharacteristics(int &_iid, unsigned short _type, int _premission, int minVal, int maxVal, int step, unit charUnit): characteristics(_iid, _type, _premission), _minVal(minVal), _maxVal(maxVal), _step(step), _unit(charUnit) {
+        _value = minVal;
+    }
     virtual string value() {
         char temp[16];
         snprintf(temp, 16, "%d", _value);
@@ -162,7 +164,7 @@ protected:
     string _value;
     const unsigned short maxLen;
 public:
-    stringCharacteristics(int _iid, unsigned short _type, int _premission, unsigned short _maxLen): characteristics(_iid, _type, _premission), maxLen(_maxLen) {}
+    stringCharacteristics(int &_iid, unsigned short _type, int _premission, unsigned short _maxLen): characteristics(_iid, _type, _premission), maxLen(_maxLen) {}
     virtual string value() {
         return _value;
     }
@@ -176,7 +178,7 @@ public:
 //And situation with multiple accessory, renew
 class identifyCharacteristics: public boolCharacteristics {
 public:
-    identifyCharacteristics(int iid): boolCharacteristics(iid, charType_identify, premission_write) {
+    identifyCharacteristics(int &iid): boolCharacteristics(iid, charType_identify, premission_write) {
         startIdentify();
     }
     void setValue(string str) {
@@ -194,7 +196,7 @@ public:
 class Service {
 public:
     const int serviceID, uuid;
-    Service(int _serviceID, int _uuid): serviceID(_serviceID), uuid(_uuid) {}
+    Service(int &_serviceID, int _uuid): serviceID(++_serviceID), uuid(_uuid) {}
     virtual short numberOfCharacteristics() { return 0; }
     virtual characteristics *characteristicsAtIndex(int index) { return 0; }
     string describe();
@@ -202,6 +204,7 @@ public:
 
 class Accessory {
 public:
+    int numberOfInstance = 0;
     const int aid;
     Accessory(int _aid): aid(_aid) {}
     virtual short numberOfService() { return 0; }
@@ -246,12 +249,12 @@ class infoService: public Service {
     stringCharacteristics serialNumber;
     identifyCharacteristics identify;
 public:
-    infoService(int index): Service(index, charType_accessoryInfo),
-    name(index+1, charType_serviceName, premission_read, 0),
-    manufactuer(index+2, charType_manufactuer, premission_read, 0),
-    modelName(index+3, charType_modelName, premission_read, 0),
-    serialNumber(index+4, charType_serialNumber, premission_read, 0),
-    identify(index+5) {
+    infoService(int &index): Service(index, charType_accessoryInfo),
+    name(index, charType_serviceName, premission_read, 0),
+    manufactuer(index, charType_manufactuer, premission_read, 0),
+    modelName(index, charType_modelName, premission_read, 0),
+    serialNumber(index, charType_serialNumber, premission_read, 0),
+    identify(index) {
         name.setValue(deviceName);
         manufactuer.setValue(manufactuerName);
         modelName.setValue(deviceName);

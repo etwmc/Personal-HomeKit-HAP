@@ -104,23 +104,13 @@ void registerFail(DNSServiceRef sdRef, DNSRecordRef RecordRef, DNSServiceFlags f
 TXTRecordRef PHKNetworkIP::buildTXTRecord() {
     TXTRecordRef txtRecord;
     TXTRecordCreate(&txtRecord, 0, NULL);
-    
-    int numbytes;
-    
-    uint32_t ccn = 1;  
-    char ccn_buff[11];
-    
-    uint32_t stn = 1;
-    char stn_buff[11];
-    numbytes = sprintf(ccn_buff, "%d", ccn);
-    TXTRecordSetValue(&txtRecord, "c#", numbytes, ccn_buff); //Current Config number
-    TXTRecordSetValue(&txtRecord, "ff", 4, "0x00"); //feature flag, 0x01 Supports MFi-pair
-    TXTRecordSetValue(&txtRecord, "id", 17, deviceIdentity); //Device id
-    TXTRecordSetValue(&txtRecord, "md", strlen(deviceName), deviceName); //Model Name
-//	TXTRecordSetValue(&txtRecord, "pv", 3, "1.0"); //Version, required if not 1.0
-    numbytes = sprintf(stn_buff, "%d", stn);
-    TXTRecordSetValue(&txtRecord, "s#", numbytes, stn_buff); //Current Status number
-//  TXTRecordSetValue(&txtRecord, "sf", 1, "1"); //Status Flags, required if non zero
+    TXTRecordSetValue(&txtRecord, "pv", 3, "1.0");  //Version
+    TXTRecordSetValue(&txtRecord, "id", 17, deviceIdentity);    //Device id
+    TXTRecordSetValue(&txtRecord, "c#", 1, "3");    //Number of Accessory?
+    TXTRecordSetValue(&txtRecord, "s#", 1, "4");    //Number of service
+    TXTRecordSetValue(&txtRecord, "sf", 1, "2");    //No idea what it is
+    TXTRecordSetValue(&txtRecord, "ff", 1, "0");    //1 for MFI product
+    TXTRecordSetValue(&txtRecord, "md", strlen(deviceName), deviceName);    //Model Name
     return txtRecord;
 }
 
@@ -140,7 +130,7 @@ PHKNetworkIP::PHKNetworkIP() {
     setupSocket();
 }
 
-//Connection Logic
+//Connection Logic, not finished
 void broadcastMessage(char *buffer, size_t len) {
     for (int i = 0; i < numberOfClient; i++) {
         int socketNumber = connection[i];
@@ -293,11 +283,7 @@ void handlePairSeup(int subSocket, char *buffer) {
                 const char salt[] = "Pair-Setup-Encrypt-Salt";
                 const char info[] = "Pair-Setup-Encrypt-Info";
                 int i = hkdf((const unsigned char*)salt, strlen(salt), (const unsigned char*)secretKey->data, secretKey->length, (const unsigned char*)info, strlen(info), (uint8_t*)sessionKey, 32);
-                printf("%d", i);
-                if (i != 0) {
-                    printf("Error on HKDF in M4\n");
-                    return;
-                }
+                if (i != 0) return;
             }
                 break;
             case 5: {
@@ -344,7 +330,6 @@ void handlePairSeup(int subSocket, char *buffer) {
                     /*
                      * HAK Pair Setup M6
                      */
-                    printf("Chacha20-Poly1305 on M5 packet check out\n");
                     char *decryptedData = new char[packageLen-16];
                     bzero(decryptedData, packageLen-16);
                     chacha20_decrypt(&chacha20, (const uint8_t *)encryptedData, (uint8_t *)decryptedData, packageLen-16);
@@ -370,10 +355,7 @@ void handlePairSeup(int subSocket, char *buffer) {
                     int ed25519_err = ed25519_sign_open((const unsigned char*)controllerHash, 100, (const unsigned char*)controllerPublicKey, (const unsigned char*)controllerSignature);
                     delete subTLV8;
                     
-                    if (ed25519_err) {
-                        printf("Problem\n");
-                        return;
-                    }
+                    if (ed25519_err) return;
                     else {
                         PHKNetworkMessageData *returnTLV8 = new PHKNetworkMessageData();
                         
@@ -449,7 +431,6 @@ void handlePairSeup(int subSocket, char *buffer) {
                         mResponse.data.addRecord(tlv8Record);
                         
                         delete returnTLV8;
-                        printf("Send M6\n");
                     }
                     
                 }

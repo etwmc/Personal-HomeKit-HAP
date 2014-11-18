@@ -7,12 +7,12 @@
 #include "PHKAccessory.h"
 
 //Global Level of light strength
-int lightStength;
-int fanSpeed;
+int lightStength = 0;
+int fanSpeedVal = 0;
 
 class lightPowerState: public boolCharacteristics {
 public:
-    lightPowerState(int index): boolCharacteristics(index, charType_on, premission_read|premission_write){}
+    lightPowerState(int &index): boolCharacteristics(index, charType_on, premission_read|premission_write){}
     string value() {
         if (lightStength > 0)
             return "1";
@@ -32,7 +32,7 @@ public:
 
 class lightBrightness: public intCharacteristics {
 public:
-    lightBrightness(int index):intCharacteristics(index, charType_brightness, premission_read|premission_write, 0, 100, 1, unit_percentage) {}
+    lightBrightness(int &index):intCharacteristics(index, charType_brightness, premission_read|premission_write, 0, 100, 1, unit_percentage) {}
     void setValue(string str) {
         this->intCharacteristics::setValue(str);
         lightStength = _value;
@@ -45,8 +45,8 @@ class lightService: public Service {
     lightPowerState powerState;
     lightBrightness brightness;
 public:
-    lightService(int index): Service(index, charType_lightBulb),
-    serviceName(index+1, charType_serviceName, premission_read, 0), powerState(index+2), brightness(index+3)
+    lightService(int &index): Service(index, charType_lightBulb),
+    serviceName(index, charType_serviceName, premission_read, 0), powerState(index), brightness(index)
     {
         serviceName.setValue(deviceName);
         powerState.setValue("false");
@@ -74,7 +74,7 @@ class MainAccessory: public Accessory {
     lightService light;
 public:
     MainAccessory(int aid): Accessory(aid),
-    info(1), light(info.serviceID+info.numberOfCharacteristics()+1) {}
+    info(numberOfInstance), light(numberOfInstance) {}
     inline virtual short numberOfService() { return 2; }
     inline virtual Service *serviceAtIndex(int index) {
         switch (index-1) {
@@ -89,19 +89,19 @@ public:
 
 class fanPowerState: public boolCharacteristics {
 public:
-    fanPowerState(int index): boolCharacteristics(index, charType_on, premission_read|premission_write){}
+    fanPowerState(int &index): boolCharacteristics(index, charType_on, premission_read|premission_write){}
     string value() {
-        if (fanSpeed > 0)
+        if (fanSpeedVal > 0)
             return "1";
         return "0";
     }
     void setValue(string str) {
         this->boolCharacteristics::setValue(str);
         if (_value) {
-            fanSpeed = 255;
+            fanSpeedVal = 255;
             setFanSpeed(255);
         } else {
-            fanSpeed = 0;
+            fanSpeedVal = 0;
             setFanSpeed(0);
         }
     }
@@ -109,10 +109,10 @@ public:
 
 class fanSpeed: public intCharacteristics {
 public:
-    fanSpeed(int index):intCharacteristics(index, charType_brightness, premission_read|premission_write, 0, 100, 1, unit_percentage) {}
+    fanSpeed(int &index):intCharacteristics(index, charType_brightness, premission_read|premission_write, 0, 100, 1, unit_percentage) {}
     void setValue(string str) {
         this->intCharacteristics::setValue(str);
-        fanSpeed = _value;
+        fanSpeedVal = _value;
         setFanSpeed(2.55*_value);
     }
 };
@@ -122,8 +122,8 @@ class fanService: public Service {
     fanPowerState powerState;
     fanSpeed speed;
 public:
-    fanService(int index): Service(index, charType_fan),
-    serviceName(index+1, charType_serviceName, premission_read, 0), powerState(index+2), speed(index+3)
+    fanService(int &index): Service(index, charType_fan),
+    serviceName(index, charType_serviceName, premission_read, 0), powerState(index), speed(index)
     {
         serviceName.setValue("Fan");
         powerState.setValue("false");
@@ -147,7 +147,7 @@ class FanAccessory: public Accessory {
     infoService info;
     fanService fan;
 public:
-    FanAccessory(int aid): Accessory(aid), info(1), fan(info.serviceID+info.numberOfCharacteristics()+1) {}
+    FanAccessory(int aid): Accessory(aid), info(numberOfInstance), fan(numberOfInstance) {}
     inline virtual short numberOfService() { return 2; }
     inline virtual Service *serviceAtIndex(int index) {
         switch (index-1) {

@@ -483,9 +483,9 @@ void handleAccessory(const char *request, unsigned int requestLen, char **reply,
         statusCode = 404;
     }
     
-    *reply = new char[1536];
-    bzero(*reply, 1536);
-    int len = snprintf(*reply, 1536, "%s %d OK\r\n\
+    *reply = new char[2048];
+    bzero(*reply, 2048);
+    int len = snprintf(*reply, 2048, "%s %d OK\r\n\
 Content-Type: %s\r\n\
 Content-Length: %u\r\n\r\n", protocol, statusCode, returnType, replyDataLen);
     

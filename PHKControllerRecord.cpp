@@ -58,7 +58,7 @@ void addControllerKey(PHKKeyRecord record) {
 #if MCU
 #else
         ofstream fs;
-        fs.open(controllerRecordsAddress, std::ofstream::out|std::ofstream::trunc);
+        fs.open(controllerRecordsAddress, std::ofstream::trunc);
 #endif
         
         for (vector<PHKKeyRecord>::iterator it = controllerRecords.begin(); it != controllerRecords.end(); it++) {

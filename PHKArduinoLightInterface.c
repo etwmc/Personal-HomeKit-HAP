@@ -59,3 +59,5 @@ void setLightStrength(int strengthLevel) {
     int len = snprintf(temp, 6, "%d", strengthLevel);
     write(serialPort, temp, len);
 }
+
+void setFanSpeed(int strengthLevel) {}
