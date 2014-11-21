@@ -169,7 +169,7 @@ public:
     }
     short numberOfAccessory() { return 2; }
     Accessory * accessoryAtIndex(int index) {
-        if (index == 0) return &acc;
+        if (index == 1) return &acc;
         else return &fan;
     }
 };
