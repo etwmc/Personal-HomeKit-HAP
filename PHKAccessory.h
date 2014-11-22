@@ -49,7 +49,7 @@ typedef enum {
     charType_hue                = 0x13,
     charType_identify           = 0x14,
     charType_inputVolume        = 0x15,
-    charType_ipCameraStart      = 0x16
+    charType_ipCameraStart      = 0x16,
     charType_ipCameraStop       = 0x17,
     charType_lockControlPoint   = 0x19,
     charType_lockAutoTimeout    = 0x1A,
@@ -71,7 +71,7 @@ typedef enum {
     charType_rtcpVideoPayload   = 0x2B,
     charType_rtcpAudioPayload   = 0x2C,
     charType_rtcpAudioClock     = 0x2D,
-    charType_rtcpProtocol       = 0x2E
+    charType_rtcpProtocol       = 0x2E,
     charType_saturation         = 0x2F,
     charType_serialNumber       = 0x30,
     charType_srtpCyptoSuite     = 0x31,
