@@ -231,7 +231,7 @@ public:
     }
     bool removeService(Service *ser) {
         bool exist = false;
-        for (auto it = _services.begin(); it != _services.end(); it++) {
+        for (vector<Service *>::iterator it = _services.begin(); it != _services.end(); it++) {
             if (*it == ser) {
                 _services.erase(it);
                 exist = true;
@@ -241,8 +241,8 @@ public:
     }
     bool removeCharacteristics(characteristics *cha) {
         bool exist = false;
-        for (auto it = _services.begin(); it != _services.end(); it++) {
-            for (auto jt = (*it)->_characteristics.begin(); jt != (*it)->_characteristics.end(); jt++) {
+        for (vector<Service *>::iterator it = _services.begin(); it != _services.end(); it++) {
+            for (vector<characteristics *>::iterator jt = (*it)->_characteristics.begin(); jt != (*it)->_characteristics.end(); jt++) {
                 if (*jt == cha) {
                     (*it)->_characteristics.erase(jt);
                     exist = true;
@@ -254,7 +254,7 @@ public:
     Accessory() {}
     short numberOfService() { return _services.size(); }
     Service *serviceAtIndex(int index) {
-        for (auto it = _services.begin(); it != _services.end(); it++) {
+        for (vector<Service *>::iterator it = _services.begin(); it != _services.end(); it++) {
             if ((*it)->serviceID == index) {
                 return *it;
             }
@@ -262,8 +262,8 @@ public:
         return NULL;
     }
     characteristics *characteristicsAtIndex(int index) {
-        for (auto it = _services.begin(); it != _services.end(); it++) {
-            for (auto jt = (*it)->_characteristics.begin(); jt != (*it)->_characteristics.end(); jt++) {
+        for (vector<Service *>::iterator it = _services.begin(); it != _services.end(); it++) {
+            for (vector<characteristics *>::iterator jt = (*it)->_characteristics.begin(); jt != (*it)->_characteristics.end(); jt++) {
                 if ((*jt)->iid == index) {
                     return *jt;
                 }
@@ -275,14 +275,14 @@ public:
 };
 
 class AccessorySet {
-    vector<Accessory *>_accessories;
+    vector<Accessory *> _accessories;
     int _aid = 0;
 public:
     short numberOfAccessory() {
         return _accessories.size();
     }
     Accessory *accessoryAtIndex(int index) {
-        for (auto it = _accessories.begin(); it != _accessories.end(); it++) {
+        for (vector<Accessory *>::iterator it = _accessories.begin(); it != _accessories.end(); it++) {
             if ((*it)->aid == index) {
                 return *it;
             }
@@ -295,7 +295,7 @@ public:
     }
     bool removeAccessory(Accessory *acc) {
         bool exist = false;
-        for (auto it = _accessories.begin(); it != _accessories.end(); it++) {
+        for (vector<Accessory *>::iterator it = _accessories.begin(); it != _accessories.end(); it++) {
             if (*it == acc) {
                 _accessories.erase(it);
                 exist = true;
