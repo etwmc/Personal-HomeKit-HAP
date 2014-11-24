@@ -7,6 +7,7 @@
 //
 
 #include "PHKAccessory.h"
+#include "Configuration.h"
 
 
 const char hapJsonType[] = "application/hap+json";
@@ -234,11 +235,6 @@ string stringCharacteristics::describe() {
     return attribute(type, iid, premission, _value, maxLen);
 }
 
-string identifyCharacteristics::describe() {
-    string a = boolCharacteristics::describe();
-    return a;
-}
-
 string Service::describe() {
     string keys[3] = {"iid", "type", "characteristics"};
     string values[3];
@@ -256,7 +252,7 @@ string Service::describe() {
         int no = numberOfCharacteristics();
         string *chars = new string[no];
         for (int i = 0; i < no; i++) {
-            chars[i] = characteristicsAtIndex(i+1+serviceID)->describe();
+            chars[i] = _characteristics[i]->describe();
         }
         values[2] = arrayWrap(chars, no);
         delete [] chars;
@@ -280,7 +276,7 @@ string Accessory::describe() {
         int noOfService = numberOfService();
         string *services = new string[noOfService];
         for (int i = 0; i < noOfService; i++) {
-            services[i] = serviceAtIndex(i+1)->describe();
+            services[i] = _services[i]->describe();
         }
         keys[1] = "services";
         values[1] = arrayWrap(services, noOfService);
@@ -295,7 +291,7 @@ string AccessorySet::describe() {
     int numberOfAcc = numberOfAccessory();
     string *desc = new string[numberOfAcc];
     for (int i = 0; i < numberOfAcc; i++) {
-        desc[i] = accessoryAtIndex(i)->describe();
+        desc[i] = _accessories[i]->describe();
     }
     string result = arrayWrap(desc, numberOfAcc);
     delete [] desc;
@@ -500,4 +496,29 @@ Content-Length: %u\r\n\r\n", protocol, statusCode, returnType, replyDataLen);
     printf("Reply: %s\n", *reply);
 #endif
     
+}
+
+void addInfoServiceToAccessory(Accessory *acc, string accName, string manufactuerName, string modelName, string serialNumber) {
+    Service *infoService = new Service(charType_accessoryInfo);
+    acc->addService(infoService);
+    
+    stringCharacteristics *accNameCha = new stringCharacteristics(charType_serviceName, premission_read, 0);
+    accNameCha->setValue(accName);
+    acc->addCharacteristics(infoService, accNameCha);
+    
+    stringCharacteristics *manNameCha = new stringCharacteristics(charType_manufactuer, premission_read, 0);
+    manNameCha->setValue(manufactuerName);
+    acc->addCharacteristics(infoService, manNameCha);
+    
+    stringCharacteristics *modelNameCha = new stringCharacteristics(charType_modelName, premission_read, 0);
+    modelNameCha->setValue(modelName);
+    acc->addCharacteristics(infoService, modelNameCha);
+    
+    stringCharacteristics *serialNameCha = new stringCharacteristics(charType_serialNumber, premission_read, 0);
+    serialNameCha->setValue(serialNumber);
+    acc->addCharacteristics(infoService, serialNameCha);
+    
+    boolCharacteristics *identify = new boolCharacteristics(charType_identify, premission_write);
+    identify->setValue("false");
+    acc->addCharacteristics(infoService, identify);
 }

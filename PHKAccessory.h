@@ -18,12 +18,11 @@ extern "C" {
 
 #include "PHKControllerRecord.h"
 
-#include "Configuration.h"
-
 extern "C" {
 #include "PHKArduinoLightInterface.h"
 }
 
+#include <vector>
 
 using namespace std;
 
@@ -118,11 +117,11 @@ typedef enum {
 
 class characteristics {
 protected:
-    const int iid;
     const unsigned short type;
     const int premission;
 public:
-    characteristics(int &_iid, unsigned short _type, int _premission): iid(++_iid), type(_type), premission(_premission) {}
+    int iid;
+    characteristics(unsigned short _type, int _premission): type(_type), premission(_premission) {}
     virtual string value() = 0;
     virtual void setValue(string str) = 0;
     virtual string describe() = 0;
@@ -135,7 +134,7 @@ class boolCharacteristics: public characteristics {
 protected:
     bool _value;
 public:
-    boolCharacteristics(int &_iid, unsigned short _type, int _premission): characteristics(_iid, _type, _premission) {}
+    boolCharacteristics(unsigned short _type, int _premission): characteristics(_type, _premission) {}
     virtual string value() {
         if (_value)
             return "1";
@@ -153,7 +152,7 @@ protected:
     const float _minVal, _maxVal, _step;
     const unit _unit;
 public:
-    floatCharacteristics(int &_iid, unsigned short _type, int _premission, float minVal, float maxVal, float step, unit charUnit): characteristics(_iid, _type, _premission), _minVal(minVal), _maxVal(maxVal), _step(step), _unit(charUnit) {}
+    floatCharacteristics(unsigned short _type, int _premission, float minVal, float maxVal, float step, unit charUnit): characteristics(_type, _premission), _minVal(minVal), _maxVal(maxVal), _step(step), _unit(charUnit) {}
     virtual string value() {
         char temp[16];
         snprintf(temp, 16, "%f", _value);
@@ -174,7 +173,7 @@ protected:
     const int _minVal, _maxVal, _step;
     const unit _unit;
 public:
-    intCharacteristics(int &_iid, unsigned short _type, int _premission, int minVal, int maxVal, int step, unit charUnit): characteristics(_iid, _type, _premission), _minVal(minVal), _maxVal(maxVal), _step(step), _unit(charUnit) {
+    intCharacteristics(unsigned short _type, int _premission, int minVal, int maxVal, int step, unit charUnit): characteristics(_type, _premission), _minVal(minVal), _maxVal(maxVal), _step(step), _unit(charUnit) {
         _value = minVal;
     }
     virtual string value() {
@@ -196,7 +195,7 @@ protected:
     string _value;
     const unsigned short maxLen;
 public:
-    stringCharacteristics(int &_iid, unsigned short _type, int _premission, unsigned short _maxLen): characteristics(_iid, _type, _premission), maxLen(_maxLen) {}
+    stringCharacteristics(unsigned short _type, int _premission, unsigned short _maxLen): characteristics(_type, _premission), maxLen(_maxLen) {}
     virtual string value() {
         return _value;
     }
@@ -206,107 +205,107 @@ public:
     virtual string describe();
 };
 
-//To identify the accessory, finish the function identify() with the method
-//And situation with multiple accessory, renew
-class identifyCharacteristics: public boolCharacteristics {
-public:
-    identifyCharacteristics(int &iid): boolCharacteristics(iid, charType_identify, premission_write) {
-        startIdentify();
-    }
-    void setValue(string str) {
-        boolCharacteristics::setValue(str);
-        if (_value)
-            identify();
-    }
-    virtual void identify() {
-        startIdentify();
-    }
-    virtual string describe();
-};
-
 //Abstract Layer of object
 class Service {
 public:
-    const int serviceID, uuid;
-    Service(int &_serviceID, int _uuid): serviceID(++_serviceID), uuid(_uuid) {}
-    virtual short numberOfCharacteristics() { return 0; }
-    virtual characteristics *characteristicsAtIndex(int index) { return 0; }
+    int serviceID, uuid;
+    vector<characteristics *> _characteristics;
+    Service(int _uuid): uuid(_uuid) {}
+    virtual short numberOfCharacteristics() { return _characteristics.size(); }
+    virtual characteristics *characteristicsAtIndex(int index) { return _characteristics[index]; }
     string describe();
 };
 
 class Accessory {
 public:
     int numberOfInstance = 0;
-    const int aid;
-    Accessory(int _aid): aid(_aid) {}
-    virtual short numberOfService() { return 0; }
-    virtual Service *serviceAtIndex(int index) {
-        return 0;
+    int aid;
+    vector<Service *>_services;
+    void addService(Service *ser) {
+        ser->serviceID = ++numberOfInstance;
+        _services.push_back(ser);
     }
-    characteristics *characteristicsAtIndex(int index) {
-        unsigned short no = numberOfService();
-        for (int i = 1; i <= no; i++) {
-            Service *s1 = serviceAtIndex(i+1);
-            if (s1) {
-                if (index < s1->serviceID) {
-                    return serviceAtIndex(i)->characteristicsAtIndex(index);
+    void addCharacteristics(Service *ser, characteristics *cha) {
+        cha->iid = ++numberOfInstance;
+        ser->_characteristics.push_back(cha);
+    }
+    bool removeService(Service *ser) {
+        bool exist = false;
+        for (auto it = _services.begin(); it != _services.end(); it++) {
+            if (*it == ser) {
+                _services.erase(it);
+                exist = true;
+            }
+        }
+        return exist;
+    }
+    bool removeCharacteristics(characteristics *cha) {
+        bool exist = false;
+        for (auto it = _services.begin(); it != _services.end(); it++) {
+            for (auto jt = (*it)->_characteristics.begin(); jt != (*it)->_characteristics.end(); jt++) {
+                if (*jt == cha) {
+                    (*it)->_characteristics.erase(jt);
+                    exist = true;
                 }
             }
-            else
-                return serviceAtIndex(i)->characteristicsAtIndex(index);
         }
-        return 0;
+        return exist;
+    }
+    Accessory() {}
+    short numberOfService() { return _services.size(); }
+    Service *serviceAtIndex(int index) {
+        for (auto it = _services.begin(); it != _services.end(); it++) {
+            if ((*it)->serviceID == index) {
+                return *it;
+            }
+        }
+        return NULL;
+    }
+    characteristics *characteristicsAtIndex(int index) {
+        for (auto it = _services.begin(); it != _services.end(); it++) {
+            for (auto jt = (*it)->_characteristics.begin(); jt != (*it)->_characteristics.end(); jt++) {
+                if ((*jt)->iid == index) {
+                    return *jt;
+                }
+            }
+        }
+        return NULL;
     }
     string describe();
 };
 
 class AccessorySet {
-    Accessory *mainAccessory;
+    vector<Accessory *>_accessories;
+    int _aid = 0;
 public:
-    virtual short numberOfAccessory() {
-        return 0;
+    short numberOfAccessory() {
+        return _accessories.size();
     }
-    virtual Accessory *accessoryAtIndex(int index) {
-        return 0;
+    Accessory *accessoryAtIndex(int index) {
+        for (auto it = _accessories.begin(); it != _accessories.end(); it++) {
+            if ((*it)->aid == index) {
+                return *it;
+            }
+        }
+        return NULL;
+    }
+    void addAccessory(Accessory *acc) {
+        acc->aid = ++_aid;
+        _accessories.push_back(acc);
+    }
+    bool removeAccessory(Accessory *acc) {
+        bool exist = false;
+        for (auto it = _accessories.begin(); it != _accessories.end(); it++) {
+            if (*it == acc) {
+                _accessories.erase(it);
+                exist = true;
+            }
+        }
+        return exist;
     }
     string describe();
 };
+//Since Info Service contains only constant, only add method will be provided
+void addInfoServiceToAccessory(Accessory *acc, string accName, string manufactuerName, string modelName, string serialNumber);
 
-//For all the service type, subclass from Service or its subclass
-//Instance ID must be bigger than 0
-class infoService: public Service {
-    stringCharacteristics name;
-    stringCharacteristics manufactuer;
-    stringCharacteristics modelName;
-    stringCharacteristics serialNumber;
-    identifyCharacteristics identify;
-public:
-    infoService(int &index): Service(index, charType_accessoryInfo),
-    name(index, charType_serviceName, premission_read, 0),
-    manufactuer(index, charType_manufactuer, premission_read, 0),
-    modelName(index, charType_modelName, premission_read, 0),
-    serialNumber(index, charType_serialNumber, premission_read, 0),
-    identify(index) {
-        name.setValue(deviceName);
-        manufactuer.setValue(manufactuerName);
-        modelName.setValue(deviceName);
-        serialNumber.setValue(deviceUUID);
-    }
-    virtual short numberOfCharacteristics() { return 5; }
-    virtual characteristics *characteristicsAtIndex(int index) {
-        switch (index-1-serviceID) {
-            case 0:
-                return &name;
-            case 1:
-                return &manufactuer;
-            case 2:
-                return &modelName;
-            case 3:
-                return &serialNumber;
-            case 4:
-                return &identify;
-        }
-        return 0;
-    }
-};
 void handleAccessory(const char *request, unsigned int requestLen, char **reply, unsigned int *replyLen);
