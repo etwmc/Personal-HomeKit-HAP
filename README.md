@@ -1,5 +1,5 @@
 #PersonalHomeKit
-This is a static version. For dynamic add/remove accessories/services, switchuse the Dynamic branch
+This is a static version. For dynamic add/remove accessories/services, switch to the Dynamic branch
 ===============
 Dear Lawyer of Apple, <br>
 If you want me to pull down the code, just send me an email. (No phone call, I don't pick up unknown number. ) I'm a reasonable kid, and I like Apple, so no need for DMCA, just talk to me, we can make a deal. 
