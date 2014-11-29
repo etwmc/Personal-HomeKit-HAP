@@ -498,7 +498,7 @@ Content-Length: %u\r\n\r\n", protocol, statusCode, returnType, replyDataLen);
     
 }
 
-void addInfoServiceToAccessory(Accessory *acc, string accName, string manufactuerName, string modelName, string serialNumber) {
+void addInfoServiceToAccessory(Accessory *acc, string accName, string manufactuerName, string modelName, string serialNumber, identifyFunction identifyCallback) {
     Service *infoService = new Service(charType_accessoryInfo);
     acc->addService(infoService);
     
@@ -520,5 +520,6 @@ void addInfoServiceToAccessory(Accessory *acc, string accName, string manufactue
     
     boolCharacteristics *identify = new boolCharacteristics(charType_identify, premission_write);
     identify->setValue("false");
+    identify->valueChangeFunctionCall = identifyCallback;
     acc->addCharacteristics(infoService, identify);
 }
