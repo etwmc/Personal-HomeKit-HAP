@@ -479,13 +479,20 @@ void handleAccessory(const char *request, unsigned int requestLen, char **reply,
         statusCode = 404;
     }
     
-    *reply = new char[2048];
-    bzero(*reply, 2048);
-    int len = snprintf(*reply, 2048, "%s %d OK\r\n\
+    //Calculate the length of header
+    *reply = new char[128];
+    bzero(*reply, 128);
+    int len = snprintf(*reply, 128, "%s %d OK\r\n\
 Content-Type: %s\r\n\
 Content-Length: %u\r\n\r\n", protocol, statusCode, returnType, replyDataLen);
+    delete [] *reply;
     
     (*replyLen) = len+replyDataLen;
+    *reply = new char[*replyLen];
+    bzero(*reply, *replyLen);
+    snprintf(*reply, 128, "%s %d OK\r\n\
+Content-Type: %s\r\n\
+Content-Length: %u\r\n\r\n", protocol, statusCode, returnType, replyDataLen);
     
     if (replyData) {
         bcopy(replyData, &(*reply)[len], replyDataLen+1);
