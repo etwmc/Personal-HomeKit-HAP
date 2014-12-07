@@ -1,5 +1,9 @@
 #PersonalHomeKit
 ===============
+Known error: <br>
+No notify function<br>
+No multiple changes at one command<br>
+These will fix after 19th Dec. <br>
 Dear Lawyer of Apple, <br>
 If you want me to pull down the code, just send me an email. (No phone call, I don't pick up unknown number. ) I'm a reasonable kid, and I like Apple, so no need for DMCA, just talk to me, we can make a deal. 
 
