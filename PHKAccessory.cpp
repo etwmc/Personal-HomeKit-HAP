@@ -29,7 +29,7 @@ inline string attribute(unsigned short type, unsigned short acclaim, int p, bool
     result += "[";
     if (p & premission_read) result += wrap("pr")+",";
     if (p & premission_write) result += wrap("pw")+",";
-    if (p & premission_update) result += wrap("ev")+",";
+    if (p & premission_notify) result += wrap("ev")+",";
     result = result.substr(0, result.size()-1);
     result += "]";
     result += ",";
@@ -72,7 +72,7 @@ inline string attribute(unsigned short type, unsigned short acclaim, int p, int 
     result += "[";
     if (p & premission_read) result += wrap("pr")+",";
     if (p & premission_write) result += wrap("pw")+",";
-    if (p & premission_update) result += wrap("ev")+",";
+    if (p & premission_notify) result += wrap("ev")+",";
     result = result.substr(0, result.size()-1);
     result += "]";
     result += ",";
@@ -126,7 +126,7 @@ inline string attribute(unsigned short type, unsigned short acclaim, int p, floa
     result += "[";
     if (p & premission_read) result += wrap("pr")+",";
     if (p & premission_write) result += wrap("pw")+",";
-    if (p & premission_update) result += wrap("ev")+",";
+    if (p & premission_notify) result += wrap("ev")+",";
     result = result.substr(0, result.size()-1);
     result += "]";
     result += ",";
@@ -166,7 +166,7 @@ inline string attribute(unsigned short type, unsigned short acclaim, int p, stri
     result += "[";
     if (p & premission_read) result += wrap("pr")+",";
     if (p & premission_write) result += wrap("pw")+",";
-    if (p & premission_update) result += wrap("ev")+",";
+    if (p & premission_notify) result += wrap("ev")+",";
     result = result.substr(0, result.size()-1);
     result += "]";
     result += ",";
@@ -300,19 +300,33 @@ string AccessorySet::describe() {
     return result;
 }
 
-void announce() {
-    
-    string desc = accSet->describe();
+struct broadcastInfo {
+    void *sender;
+    char *desc;
+};
+
+void *announce(void *info) {
+    broadcastInfo *_info = (broadcastInfo *)info;
+    void *sender = _info->sender;
+    char *desc = _info->desc;
     
     char *reply = new char[1024];
-    int len = snprintf(reply, 1024, "EVENT/1.1 200 OK\r\n\
-                       Content-Type: application/hap+json\r\n\
-                       Content-Length: %lu\r\n\r\n%s", desc.length(), desc.c_str());
-    broadcastMessage(reply, len);
+    int len = snprintf(reply, 1024, "EVENT/1.0 200 OK\r\n\
+Content-Type: application/hap+json\r\n\
+Content-Length: %lu\r\n\r\n%s", strlen(desc), desc);
+    
+#if HomeKitLog == 1 && HomeKitReplyHeaderLog==1
+    printf("%s\n", reply);
+#endif
+    
+    broadcastMessage(sender, reply, len);
     delete [] reply;
+    
+    delete [] desc;
+    delete [] info;
 }
 
-void handleAccessory(const char *request, unsigned int requestLen, char **reply, unsigned int *replyLen) {
+void handleAccessory(const char *request, unsigned int requestLen, char **reply, unsigned int *replyLen, connectionInfo *sender) {
 #if HomeKitLog == 1
     printf("Receive request: %s\n", request);
 #endif
@@ -399,6 +413,7 @@ void handleAccessory(const char *request, unsigned int requestLen, char **reply,
             statusCode = 200;
         }
     } else if (strncmp(path, "/characteristics", 16) == 0){
+        pthread_mutex_lock(&accSet->accessoryMutex);
         if (strncmp(method, "GET", 3) == 0) {
             //Read characteristics
             int aid = 0;    int iid = 0;
@@ -434,41 +449,85 @@ void handleAccessory(const char *request, unsigned int requestLen, char **reply,
             }
         } else if (strncmp(method, "PUT", 3) == 0) {
             //Change characteristics
-            int aid = 0;    int iid = 0; char value[16];
-            sscanf(dataPtr, "{\"characteristics\":[{\"aid\":%d,\"iid\":%d,\"value\":%s}]}", &aid, &iid, value);
-            if (aid ==0 && iid == 0) {
-                sscanf(dataPtr, "{\"characteristics\":[{\"remote\":true,\"value\":%[^,]s,\"aid\":%d,\"iid\":%d}]}", value, &aid, &iid);
-            }
-#if HomeKitLog == 1
-            printf("Ask to change one characteristics: %d . %d -> %s\n", aid, iid, value);
-#endif
-            Accessory *a = accSet->accessoryAtIndex(aid);
-            if (a==NULL) {
-                statusCode = 400;
-            } else {
-                characteristics *c = a->characteristicsAtIndex(iid);
-                if (c==NULL) {
+            
+            char characteristicsBuffer[1000];
+            sscanf(dataPtr, "{\"characteristics\":[{%[^]]s}", characteristicsBuffer);
+            
+            char *buffer2 = characteristicsBuffer;
+            while (strlen(buffer2) && statusCode != 400) {
+                bool reachLast = false; bool updateNotify = false;
+                char *buffer1;
+                buffer1 = strtok_r(buffer2, "}", &buffer2);
+                if (*buffer2 != 0) buffer2+=2;
+                
+                int aid = 0;    int iid = 0; char value[16];
+                int result = sscanf(buffer1, "\"aid\":%d,\"iid\":%d,\"value\":%s", &aid, &iid, value);
+                if (result == 2) {
+                    sscanf(buffer1, "\"aid\":%d,\"iid\":%d,\"ev\":%s", &aid, &iid, value);
+                    updateNotify = true;
+                } else if (result == 0) {
+                    sscanf(buffer1, "\"remote\":true,\"value\":%[^,],\"aid\":%d,\"iid\":%d", value, &aid, &iid);
+                    if (result == 2) {
+                        sscanf(buffer1, "\"remote\":true,\"aid\":%d,\"iid\":%d,\"ev\":%s", &aid, &iid, value);
+                        updateNotify = true;
+                    }
+                }
+                
+                Accessory *a = accSet->accessoryAtIndex(aid);
+                if (a==NULL) {
                     statusCode = 400;
                 } else {
-                    if (c->writable()) {
-                        c->setValue(value);
-                        
-                        statusCode = 204;
-                        if (c->update());
-                            //Broadcast change to everyone
-                            //announce();
+                    characteristics *c = a->characteristicsAtIndex(iid);
+                    
+                    if (updateNotify) {
+#if HomeKitLog == 1
+                        printf("Ask to notify one characteristics: %d . %d -> %s\n", aid, iid, value);
+#endif
+                        if (c==NULL) {
+                            statusCode = 400;
+                        } else {
+                            if (c->notifiable()) {
+                                sender->addNotify(c);
+                                
+                                statusCode = 204;
+                            } else {
+                                statusCode = 400;
+                            }
+                        }
                     } else {
-                        statusCode = 400;
+#if HomeKitLog == 1
+                        printf("Ask to change one characteristics: %d . %d -> %s\n", aid, iid, value);
+#endif
+                        if (c==NULL) {
+                            statusCode = 400;
+                        } else {
+                            if (c->writable()) {
+                                c->setValue(value);
+                                
+                                char *broadcastTemp = new char[1024];
+                                snprintf(broadcastTemp, 1024, "{\"characteristics\":[{%s}]}", buffer1);
+                                broadcastInfo * info = new broadcastInfo;
+                                info->sender = c;
+                                info->desc = broadcastTemp;
+                                pthread_t thread;
+                                pthread_create(&thread, NULL, announce, info);
+                                
+                                statusCode = 204;
+                                
+                            } else {
+                                statusCode = 400;
+                            }
+                        }
                     }
+                    
                 }
                 
             }
             
-            
-            
         } else {
             return;
         }
+        pthread_mutex_unlock(&accSet->accessoryMutex);
     } else {
         //Error
 #if HomeKitLog == 1

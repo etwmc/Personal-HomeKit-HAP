@@ -38,11 +38,11 @@ void initAccessorySet() {
     lightServiceName->setValue("Light");
     lightAcc->addCharacteristics(lightService, lightServiceName);
     
-    boolCharacteristics *powerState = new boolCharacteristics(charType_on, premission_read|premission_write);
+    boolCharacteristics *powerState = new boolCharacteristics(charType_on, premission_read|premission_write|premission_notify);
     powerState->setValue("true");
     lightAcc->addCharacteristics(lightService, powerState);
     
-    intCharacteristics *brightnessState = new intCharacteristics(charType_brightness, premission_read|premission_write, 0, 100, 1, unit_percentage);
+    intCharacteristics *brightnessState = new intCharacteristics(charType_brightness, premission_read|premission_write|premission_notify, 0, 100, 1, unit_percentage);
     brightnessState->setValue("50");
     brightnessState->valueChangeFunctionCall = &changeLightIntensity;
     lightAcc->addCharacteristics(lightService, brightnessState);
