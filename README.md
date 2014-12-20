@@ -1,14 +1,7 @@
 #PersonalHomeKit
-This is a static version. For dynamic add/remove accessories/services, switch to the Dynamic branch
+This is a dymanic version (runtime add/remove accessories/services). For static version(MCU version), switch to the static branch
+Now support multiple characteristic, notify function
 ===============
-Known error: <br>
-No notify function<br>
-No multiple changes at one command<br>
-These will fix after 19th Dec. <br>
-<<<<<<< HEAD
-=======
-
->>>>>>> master
 Dear Lawyer of Apple, <br>
 If you want me to pull down the code, just send me an email. (No phone call, I don't pick up unknown number. ) I'm a reasonable kid, and I like Apple, so no need for DMCA, just talk to me, we can make a deal. 
 
