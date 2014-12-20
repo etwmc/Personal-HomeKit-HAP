@@ -712,7 +712,7 @@ void handlePairVerify(int subSocket, char *buffer) {
                 poly1305_update(&verifyContext, (const unsigned char *)waste, 14);
                 
                 poly1305_update(&verifyContext, (const unsigned char *)&reply[2], resultLen);
-                poly1305_update(&verifyContext, (const unsigned char *)waste, 16-resultLen%16);
+                if (resultLen%16) poly1305_update(&verifyContext, (const unsigned char *)waste, 16-resultLen%16);
                 unsigned long long _len;
                 _len = 2;
                 poly1305_update(&verifyContext, (const unsigned char *)&_len, 8);
