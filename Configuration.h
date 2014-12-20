@@ -27,6 +27,12 @@
  * So you will never got the pair corrected, as it is incomplete (The error require manually reset HomeKit setting
  */
 #define numberOfClient 20
+//Number of notifiable value
+/*
+ * Count how many notifiable value exist in your set
+ * For dynamic add/drop model, please estimate the maximum number (Too few->Buffer overflow)
+ */
+#define numberOfNotifiableValue 1
 
 //If you compiling this to microcontroller, set it to 1
 #define MCU 0

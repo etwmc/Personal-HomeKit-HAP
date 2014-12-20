@@ -15,12 +15,15 @@
 #include <dns_sd.h>
 #include <cstring>
 #include <string>
+
+#include "Configuration.h"
+
 using namespace std;
 
 #define IPv4 1
 #define IPv6 0
 
-void broadcastMessage(char *buffer, size_t len);
+void broadcastMessage(void *sender, char *resultData, size_t resultLen);
 
 class PHKNetworkIP {
     void setupSocket();
@@ -74,6 +77,56 @@ public:
     PHKNetworkMessageData data;
     PHKNetworkResponse(unsigned short _responseCode);
     void getBinaryPtr(char **buffer, int *contentLength);
+};
+
+
+class connectionInfo {
+public:
+    pthread_t thread;
+    pthread_mutex_t mutex;
+    
+    bool connected = false;
+    
+    uint8_t controllerToAccessoryKey[32];
+    uint8_t accessoryToControllerKey[32];
+    unsigned long long numberOfMsgRec = 0;
+    unsigned long long numberOfMsgSend = 0;
+    int subSocket = -1;
+    char buffer[4096];
+    
+    void *notificationList[numberOfNotifiableValue];
+    
+    void handlePairSeup();
+    void handlePairVerify();
+    
+    void addNotify(void *target) {
+        for (int i = 0; i < numberOfNotifiableValue; i++) {
+            if (notificationList[i] == 0) {
+                notificationList[i] = target;
+                printf("Add notify %d\n", target);
+                return;
+            }
+        }
+    }
+    bool notify(void *target) {
+        for (int i = 0; i < numberOfNotifiableValue; i++) {
+            if (notificationList[i] == target) {
+                return true;
+            }
+        }
+        return false;
+    }
+    void removeNotify(void *target) {
+        for (int i = 0; i < numberOfNotifiableValue; i++) {
+            if (notificationList[i] == target)
+                notificationList[i] = 0;
+        }
+    }
+    void clearNotify() {
+        for (int i = 0; i < numberOfNotifiableValue; i++) {
+            notificationList[i] = 0;
+        }
+    }
 };
 
 void updateConfiguration();
