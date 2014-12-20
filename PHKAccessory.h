@@ -24,6 +24,11 @@ extern "C" {
 
 #include <vector>
 
+#if MCU
+#else
+#include <pthread.h>
+#endif
+
 using namespace std;
 
 typedef enum {
@@ -105,7 +110,7 @@ typedef enum {
 enum {
     premission_read = 1,
     premission_write = 1 << 1,
-    premission_update = 1 << 2  //Update = Accessory will notice the controller
+    premission_notify = 1 << 2  //Notify = Accessory will notice the controller
 };
 
 typedef enum {
@@ -118,6 +123,7 @@ typedef enum {
 
 class characteristics {
 public:
+    
     const unsigned short type;
     const int premission;
     int iid;
@@ -126,7 +132,7 @@ public:
     virtual void setValue(string str) = 0;
     virtual string describe() = 0;
     bool writable() { return premission&premission_write; }
-    bool update() { return premission&premission_update; }
+    bool notifiable() { return premission&premission_notify; }
 };
 
 //To store value of device state, subclass the following type
@@ -204,7 +210,7 @@ public:
     void (*valueChangeFunctionCall)(string oldValue, string newValue) = NULL;
     stringCharacteristics(unsigned short _type, int _premission, unsigned short _maxLen): characteristics(_type, _premission), maxLen(_maxLen) {}
     virtual string value() {
-        return _value;
+        return "\""+_value+"\"";
     }
     virtual void setValue(string str) {
         if (valueChangeFunctionCall)
@@ -287,6 +293,10 @@ class AccessorySet {
     vector<Accessory *> _accessories;
     int _aid = 0;
 public:
+    pthread_mutex_t accessoryMutex;
+    AccessorySet() {
+        pthread_mutex_init(&accessoryMutex, NULL);
+    }
     short numberOfAccessory() {
         return _accessories.size();
     }
@@ -312,6 +322,9 @@ public:
         }
         return exist;
     }
+    ~AccessorySet() {
+        pthread_mutex_destroy(&accessoryMutex);
+    }
     string describe();
 };
 
@@ -320,4 +333,4 @@ typedef void (*identifyFunction)(bool oldValue, bool newValue);
 //Since Info Service contains only constant, only add method will be provided
 void addInfoServiceToAccessory(Accessory *acc, string accName, string manufactuerName, string modelName, string serialNumber, identifyFunction identifyCallback);
 
-void handleAccessory(const char *request, unsigned int requestLen, char **reply, unsigned int *replyLen);
+void handleAccessory(const char *request, unsigned int requestLen, char **reply, unsigned int *replyLen, connectionInfo *sender);
