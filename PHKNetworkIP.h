@@ -24,7 +24,6 @@ void broadcastMessage(char *buffer, size_t len);
 
 class PHKNetworkIP {
     void setupSocket();
-    TXTRecordRef buildTXTRecord();
     void handlePairSeup(int subSocket, char *buffer) const;
     void handlePairVerify(int subSocket, char *buffer) const;
 public:
@@ -76,5 +75,7 @@ public:
     PHKNetworkResponse(unsigned short _responseCode);
     void getBinaryPtr(char **buffer, int *contentLength);
 };
+
+void updateConfiguration();
 
 #endif /* defined(__Workbench__PHKNetworkIP__) */

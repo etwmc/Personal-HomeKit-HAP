@@ -65,6 +65,8 @@ int connection[numberOfClient];
 int _socket_v4, _socket_v6;
 DNSServiceRef netServiceV4, netServiceV6;
 
+int currentConfigurationNum = 1;
+
 //Network Setup
 int setupSocketV4(unsigned int maximumConnection) {
     int _socket = socket(PF_INET, SOCK_STREAM, 0);
@@ -101,17 +103,26 @@ void registerFail(DNSServiceRef sdRef, DNSRecordRef RecordRef, DNSServiceFlags f
     exit(0);
 }
 
-TXTRecordRef PHKNetworkIP::buildTXTRecord() {
+TXTRecordRef buildTXTRecord() {
     TXTRecordRef txtRecord;
     TXTRecordCreate(&txtRecord, 0, NULL);
     TXTRecordSetValue(&txtRecord, "pv", 3, "1.0");  //Version
     TXTRecordSetValue(&txtRecord, "id", 17, deviceIdentity);    //Device id
-    TXTRecordSetValue(&txtRecord, "c#", 1, "3");    //Number of Accessory?
+    char buf[2];
+    sprintf(buf, "%d", currentConfigurationNum);
+    TXTRecordSetValue(&txtRecord, "c#", 1, buf);    //Configuration Number
     TXTRecordSetValue(&txtRecord, "s#", 1, "4");    //Number of service
     TXTRecordSetValue(&txtRecord, "sf", 1, "2");    //No idea what it is
     TXTRecordSetValue(&txtRecord, "ff", 1, "0");    //1 for MFI product
     TXTRecordSetValue(&txtRecord, "md", strlen(deviceName), deviceName);    //Model Name
     return txtRecord;
+}
+
+void updateConfiguration() {
+    currentConfigurationNum++;
+    TXTRecordRef txtRecord = buildTXTRecord();
+    DNSServiceUpdateRecord(netServiceV4, NULL, 0, TXTRecordGetLength(&txtRecord), TXTRecordGetBytesPtr(&txtRecord), 0);
+    TXTRecordDeallocate(&txtRecord);
 }
 
 void PHKNetworkIP::setupSocket() {
