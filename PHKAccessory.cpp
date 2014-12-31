@@ -554,7 +554,7 @@ Content-Type: %s\r\n\
 Content-Length: %u\r\n\r\n", protocol, statusCode, returnType, replyDataLen);
     
     if (replyData) {
-        bcopy(replyData, &(*reply)[len], replyDataLen+1);
+        bcopy(replyData, &(*reply)[len], replyDataLen);
         delete [] replyData;
     }
     
