@@ -539,6 +539,11 @@ void handleAccessory(const char *request, unsigned int requestLen, char **reply,
     }
     
     //Calculate the length of header
+    *reply = new char[256];
+    bzero(*reply, 256);
+    int len = snprintf(*reply, 256, "%s %d OK\r\n\
+Content-Type: %s\r\n\
+Content-Length: %u\r\n\r\n", protocol, statusCode, returnType, replyDataLen);
     
     (*replyLen) = len+replyDataLen;
     *reply = new char[*replyLen];
