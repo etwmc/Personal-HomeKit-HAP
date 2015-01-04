@@ -260,8 +260,6 @@ void connectionInfo::handlePairSeup() {
         
         state = *msg.data.dataPtrForIndex(6);
         
-        printf("Start pairing state: %d\n", state);
-        
         *stateRecord.data = state+1;
         switch (state) {
             case 1: {
