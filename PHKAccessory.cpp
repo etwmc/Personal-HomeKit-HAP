@@ -544,7 +544,6 @@ void handleAccessory(const char *request, unsigned int requestLen, char **reply,
     int len = snprintf(*reply, 128, "%s %d OK\r\n\
 Content-Type: %s\r\n\
 Content-Length: %u\r\n\r\n", protocol, statusCode, returnType, replyDataLen);
-    delete [] *reply;
     
     (*replyLen) = len+replyDataLen;
     *reply = new char[*replyLen];

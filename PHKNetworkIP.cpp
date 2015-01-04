@@ -529,7 +529,6 @@ void connectionInfo::handlePairVerify() {
         PHKNetworkMessage msg(buffer);
         PHKNetworkResponse response = PHKNetworkResponse(200);
         bcopy(msg.data.dataPtrForIndex(6), &state, 1);
-        printf("State = %d\n", state);
         switch (state) {
             case 1: {
 #if HomeKitLog == 1
