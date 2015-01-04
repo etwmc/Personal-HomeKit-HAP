@@ -163,7 +163,7 @@ void broadcastMessage(void *sender, char *resultData, size_t resultLen) {
             reply[1] = (resultLen-(uint8_t)reply[0])/256;
             
             chacha20_setup(&chacha20, (const uint8_t *)connection[i].accessoryToControllerKey, 32, (uint8_t *)&connection[i].numberOfMsgSend);
-            connection[i].numberOfMsgSend++;
+            //connection[i].numberOfMsgSend++;
             chacha20_encrypt(&chacha20, (const uint8_t*)temp, (uint8_t *)temp2, 64);
             chacha20_encrypt(&chacha20, (const uint8_t*)resultData, (uint8_t*)&reply[2], resultLen);
             
