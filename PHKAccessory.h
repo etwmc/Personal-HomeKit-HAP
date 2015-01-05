@@ -195,9 +195,9 @@ public:
     virtual void setValue(string str) {
         float temp = atoi(str.c_str());
         if (temp == temp) {
-            _value = temp;
             if (valueChangeFunctionCall)
                 valueChangeFunctionCall(_value, temp);
+            _value = temp;
         }
     }
     virtual string describe();
