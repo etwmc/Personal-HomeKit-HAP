@@ -1,4 +1,4 @@
-LINK = -lssl -lcrypto -ldl -pthread
+LINK = -lssl -lcrypto -ldl -lpthread
 CFLAG = -O0
 CC = gcc
 CPP = g++
