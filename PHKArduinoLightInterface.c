@@ -7,6 +7,7 @@
 //
 
 #include "PHKArduinoLightInterface.h"
+#include <unistd.h>
 #include <fcntl.h>
 #include <termios.h>
 #include <stdio.h>
