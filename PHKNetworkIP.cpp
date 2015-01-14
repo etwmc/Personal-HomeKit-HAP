@@ -714,6 +714,10 @@ void connectionInfo::handlePairVerify() {
         delete [] repBuffer;
     } while (!end && read(subSocket, buffer, 4096) > 0);
     
+    handleAccessoryRequest();
+}
+
+void connectionInfo::handleAccessoryRequest() {
     connected = true;
     
     char *decryptData = new char[2048];
@@ -776,7 +780,6 @@ void connectionInfo::handlePairVerify() {
             char *resultData = 0; unsigned int resultLen = 0;
             handleAccessory(decryptData, msgLen, &resultData, &resultLen, this);
             
-            
             char *reply = new char[resultLen+18];
             reply[0] = resultLen%256;
             reply[1] = (resultLen-(uint8_t)reply[0])/256;
@@ -817,6 +820,7 @@ void connectionInfo::handlePairVerify() {
 
     delete [] decryptData;
     connected = false;
+
 }
 
 //Object Logic

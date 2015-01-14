@@ -117,6 +117,7 @@ public:
     
     void handlePairSeup();
     void handlePairVerify();
+    void handleAccessoryRequest();
     
     void addNotify(void *target) {
         for (int i = 0; i < numberOfNotifiableValue; i++) {
