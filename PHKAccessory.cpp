@@ -545,13 +545,15 @@ void handleAccessory(const char *request, unsigned int requestLen, char **reply,
 Content-Type: %s\r\n\
 Content-Length: %u\r\n\r\n", protocol, statusCode, returnType, replyDataLen);
     
+    //replyLen should omit the '\0'.
     (*replyLen) = len+replyDataLen;
-    *reply = new char[*replyLen];
-    bzero(*reply, *replyLen);
-    snprintf(*reply, 128, "%s %d OK\r\n\
+    //reply should add '\0', or the printf is incorrect
+    *reply = new char[*replyLen + 1];
+    bzero(*reply, *replyLen + 1);
+    snprintf(*reply, len + 1, "%s %d OK\r\n\
 Content-Type: %s\r\n\
 Content-Length: %u\r\n\r\n", protocol, statusCode, returnType, replyDataLen);
-    
+
     if (replyData) {
         bcopy(replyData, &(*reply)[len], replyDataLen);
         delete [] replyData;
