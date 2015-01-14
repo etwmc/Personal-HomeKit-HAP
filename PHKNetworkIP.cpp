@@ -211,6 +211,8 @@ void *connectionLoop(void *threadInfo) {
                 }
                 else if (!strcmp(msg.directory, "pair-verify")){
                     info->handlePairVerify();
+		    //When pair-verify done, we handle Accessory Request
+                    info->handleAccessoryRequest();
                 }
             }
             
@@ -714,7 +716,6 @@ void connectionInfo::handlePairVerify() {
         delete [] repBuffer;
     } while (!end && read(subSocket, buffer, 4096) > 0);
     
-    handleAccessoryRequest();
 }
 
 void connectionInfo::handleAccessoryRequest() {
