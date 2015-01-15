@@ -23,6 +23,25 @@ using namespace std;
 #define IPv4 1
 #define IPv6 0
 
+typedef enum
+{
+    State_M1_SRPStartRequest      = 1,
+    State_M2_SRPStartRespond      = 2,
+    State_M3_SRPVerifyRequest     = 3,
+    State_M4_SRPVerifyRespond     = 4,
+    State_M5_ExchangeRequest      = 5,
+    State_M6_ExchangeRespond      = 6,
+} PairSetupState_t;
+
+typedef enum
+{
+    State_Pair_Verify_M1          = 1,
+    State_Pair_Verify_M2          = 2,
+    State_Pair_Verify_M3          = 3,
+    State_Pair_Verify_M4          = 4,
+} PairVerifyState_t;
+
+
 void broadcastMessage(void *sender, char *resultData, size_t resultLen);
 
 class PHKNetworkIP {
@@ -98,6 +117,7 @@ public:
     
     void handlePairSeup();
     void handlePairVerify();
+    void handleAccessoryRequest();
     
     void addNotify(void *target) {
         for (int i = 0; i < numberOfNotifiableValue; i++) {

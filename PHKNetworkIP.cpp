@@ -203,7 +203,7 @@ void *connectionLoop(void *threadInfo) {
                 if (!strcmp(msg.directory, "pair-setup")){
                     
                     /*
-                     * The processo f pair-setup
+                     * The process of pair-setup
                      */
                     
                     info->handlePairSeup();
@@ -211,6 +211,8 @@ void *connectionLoop(void *threadInfo) {
                 }
                 else if (!strcmp(msg.directory, "pair-verify")){
                     info->handlePairVerify();
+		    //When pair-verify done, we handle Accessory Request
+                    info->handleAccessoryRequest();
                 }
             }
             
@@ -245,24 +247,26 @@ void PHKNetworkIP::handleConnection() const {
 
 void connectionInfo::handlePairSeup() {
     PHKNetworkMessageDataRecord stateRecord;
-    stateRecord.activate = true;    stateRecord.data = new char[1]; stateRecord.length = 1;    stateRecord.index = 6;
-    int state = 1;
+    stateRecord.activate = true;
+    stateRecord.data = new char[1];
+    stateRecord.length = 1;
+    stateRecord.index = 6;
+    PairSetupState_t state = State_M1_SRPStartRequest;
     SRP *srp;
     srp = SRP_new(SRP6a_server_method());
     cstr *secretKey = NULL, *publicKey = NULL, *response = NULL;
     char sessionKey[64];
-    PHKNetworkMessage msg = PHKNetworkMessage(buffer);
     char *responseBuffer = 0; int responseLen = 0;
     
     do {
-        msg = PHKNetworkMessage(buffer);
+        PHKNetworkMessage msg = PHKNetworkMessage(buffer);
         PHKNetworkResponse mResponse(200);
         
-        state = *msg.data.dataPtrForIndex(6);
+        state = (PairSetupState_t)(*msg.data.dataPtrForIndex(6));
         
-        *stateRecord.data = state+1;
+        *stateRecord.data = (char)state+1;
         switch (state) {
-            case 1: {
+            case State_M1_SRPStartRequest: {
                 PHKNetworkMessageDataRecord saltRec;
                 PHKNetworkMessageDataRecord publicKeyRec;
                 unsigned char saltChar[16];
@@ -292,7 +296,7 @@ void connectionInfo::handlePairSeup() {
                 mResponse.data.addRecord(saltRec);
             }
                 break;
-            case 3: {
+            case State_M3_SRPVerifyRequest: {
                 const char *keyStr = 0;
                 int keyLen = 0;
                 const char *proofStr;
@@ -304,23 +308,30 @@ void connectionInfo::handlePairSeup() {
                     proofStr = temp;
                     proofLen = msg.data.lengthForIndex(4);
                 }
-                
-                
+
                 SRP_RESULT result = SRP_compute_key(srp, &secretKey, (const unsigned char*)keyStr, keyLen);
                 result = SRP_verify(srp, (const unsigned char*)proofStr, proofLen);
                 
                 if (!SRP_OK(result)) {
                     PHKNetworkMessageDataRecord responseRecord;
-                    responseRecord.activate = true; responseRecord.data = new char[1]; responseRecord.data[0] = 2; responseRecord.index = 7;   responseRecord.length = 1;
-                    mResponse.data.addRecord(responseRecord);
+		    responseRecord.activate = true;
+		    responseRecord.data = new char[1];
+		    responseRecord.data[0] = 2;
+		    responseRecord.index = 7;
+		    responseRecord.length = 1;
+		    mResponse.data.addRecord(responseRecord);
 #if HomeKitLog == 1
                     printf("Oops at M3\n");
 #endif
                 } else {
                     SRP_respond(srp, &response);
-                    PHKNetworkMessageDataRecord responseRecord;
-                    responseRecord.activate = true; responseRecord.index = 4;   responseRecord.length = response->length; responseRecord.data = new char[responseRecord.length];    bcopy(response->data, responseRecord.data, responseRecord.length);
-                    mResponse.data.addRecord(responseRecord);
+		    PHKNetworkMessageDataRecord responseRecord;
+		    responseRecord.activate = true;
+		    responseRecord.index = 4;
+		    responseRecord.length = response->length;
+		    responseRecord.data = new char[responseRecord.length];
+		    bcopy(response->data, responseRecord.data, responseRecord.length);
+		    mResponse.data.addRecord(responseRecord);
 #if HomeKitLog == 1
                     printf("Password Correct\n");
 #endif
@@ -332,7 +343,7 @@ void connectionInfo::handlePairSeup() {
                 if (i != 0) return;
             }
                 break;
-            case 5: {
+            case State_M5_ExchangeRequest: {
                 
                 const char *encryptedPackage = NULL;int packageLen = 0;
                 encryptedPackage = msg.data.dataPtrForIndex(5);
@@ -349,7 +360,7 @@ void connectionInfo::handlePairSeup() {
                 char temp[64];  bzero(temp, 64); char temp2[64];  bzero(temp2, 64);
                 chacha20_encrypt(&chacha20, (const uint8_t*)temp, (uint8_t *)temp2, 64);
                 
-                char verify[16];    bzero(verify, 16);
+                char verify[16];  bzero(verify, 16);
                 poly1305_context verifyContext; bzero(&verifyContext, sizeof(verifyContext));
                 poly1305_init(&verifyContext, (const unsigned char*)temp2);
                 poly1305_update(&verifyContext, (const unsigned char *)encryptedData, packageLen-16);
@@ -367,8 +378,12 @@ void connectionInfo::handlePairSeup() {
                 
                 if (bcmp(verify, mac, 16)) {
                     PHKNetworkMessageDataRecord responseRecord;
-                    responseRecord.activate = true; responseRecord.data = new char[1]; responseRecord.data[0] = 1; responseRecord.index = 7;   responseRecord.length = 1;
-                    mResponse.data.addRecord(responseRecord);
+		    responseRecord.activate = true;
+		    responseRecord.data = new char[1];
+		    responseRecord.data[0] = 1;
+		    responseRecord.index = 7;
+		    responseRecord.length = 1;
+		    mResponse.data.addRecord(responseRecord);
 #if HomeKitLog == 1
                     printf("Corrupt TLv8 at M5\n");
 #endif
@@ -435,8 +450,12 @@ void connectionInfo::handlePairSeup() {
                             returnTLV8->addRecord(signatureRecord);
                             
                             PHKNetworkMessageDataRecord publicKeyRecord;
-                            publicKeyRecord.activate = true;   publicKeyRecord.index = 3;    publicKeyRecord.length = 32; publicKeyRecord.data = new char[publicKeyRecord.length];    bcopy(edPubKey, publicKeyRecord.data, publicKeyRecord.length);
-                            returnTLV8->addRecord(publicKeyRecord);
+			    publicKeyRecord.activate = true;
+			    publicKeyRecord.index = 3;
+			    publicKeyRecord.length = 32;
+			    publicKeyRecord.data = new char[publicKeyRecord.length];
+			    bcopy(edPubKey, publicKeyRecord.data, publicKeyRecord.length);
+			    returnTLV8->addRecord(publicKeyRecord);
                         }
                         
                         const char *tlv8Data;unsigned short tlv8Len;
@@ -511,7 +530,7 @@ void connectionInfo::handlePairSeup() {
 
 void connectionInfo::handlePairVerify() {
     bool end = false;
-    unsigned char state = 1;
+    PairVerifyState_t state = State_Pair_Verify_M1;
     
     curved25519_key secretKey;
     curved25519_key publicKey;
@@ -528,7 +547,7 @@ void connectionInfo::handlePairVerify() {
         PHKNetworkResponse response = PHKNetworkResponse(200);
         bcopy(msg.data.dataPtrForIndex(6), &state, 1);
         switch (state) {
-            case 1: {
+            case State_Pair_Verify_M1: {
 #if HomeKitLog == 1
                 printf("Pair Verify M1\n");
 #endif
@@ -557,11 +576,20 @@ void connectionInfo::handlePairVerify() {
                 delete [] temp;
                 
                 PHKNetworkMessageDataRecord idRecord;
-                idRecord.activate = true;   idRecord.data = new char[strlen(deviceIdentity)]; strcpy(idRecord.data, deviceIdentity); idRecord.index = 1; idRecord.length = (unsigned int)strlen(deviceIdentity);
+		idRecord.activate = true;
+		idRecord.data = new char[strlen(deviceIdentity)];
+		strcpy(idRecord.data, deviceIdentity);
+		idRecord.index = 1;
+		idRecord.length = (unsigned int)strlen(deviceIdentity);
+
                 PHKNetworkMessageDataRecord pubKeyRecord;
-                pubKeyRecord.activate = true;   pubKeyRecord.data = new char[32];bcopy(publicKey, pubKeyRecord.data, 32);  pubKeyRecord.index = 3; pubKeyRecord.length = 32;
-                
-                PHKNetworkMessageData data;
+		pubKeyRecord.activate = true;
+		pubKeyRecord.data = new char[32];
+		bcopy(publicKey, pubKeyRecord.data, 32);
+		pubKeyRecord.index = 3;
+		pubKeyRecord.length = 32;
+
+		PHKNetworkMessageData data;
                 response.data.addRecord(pubKeyRecord);
                 data.addRecord(signRecord);
                 data.addRecord(idRecord);
@@ -610,7 +638,7 @@ void connectionInfo::handlePairVerify() {
                 delete [] polyKey;
             }
                 break;
-            case 3: {
+            case State_Pair_Verify_M3: {
 #if HomeKitLog == 1
                 printf("Pair Verify M3\n");
 #endif
@@ -675,8 +703,12 @@ void connectionInfo::handlePairVerify() {
         }
         
         PHKNetworkMessageDataRecord stage;
-        stage.activate = true;   stage.data = new char; stage.data[0] = state+1; stage.index = 6; stage.length = 1;
-        response.data.addRecord(stage);
+	stage.activate = true;
+	stage.data = new char;
+	stage.data[0] = (char)state+1;
+	stage.index = 6;
+	stage.length = 1;
+	response.data.addRecord(stage);
         
         char *repBuffer = 0;  int repLen = 0;
         response.getBinaryPtr(&repBuffer, &repLen);
@@ -684,6 +716,9 @@ void connectionInfo::handlePairVerify() {
         delete [] repBuffer;
     } while (!end && read(subSocket, buffer, 4096) > 0);
     
+}
+
+void connectionInfo::handleAccessoryRequest() {
     connected = true;
     
     char *decryptData = new char[2048];
@@ -746,7 +781,6 @@ void connectionInfo::handlePairVerify() {
             char *resultData = 0; unsigned int resultLen = 0;
             handleAccessory(decryptData, msgLen, &resultData, &resultLen, this);
             
-            
             char *reply = new char[resultLen+18];
             reply[0] = resultLen%256;
             reply[1] = (resultLen-(uint8_t)reply[0])/256;
@@ -780,9 +814,6 @@ void connectionInfo::handlePairVerify() {
             
             delete [] reply;
             delete [] resultData;
-            
-            
-            
         }
     } while (len > 0);
     
@@ -790,6 +821,7 @@ void connectionInfo::handlePairVerify() {
 
     delete [] decryptData;
     connected = false;
+
 }
 
 //Object Logic
