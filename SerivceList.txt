@@ -1,0 +1,86 @@
+Apple Characteristic	|ID
+————————————————————————+——
+adminOnlyAccess		|1
+audioChannels		|2
+audioCodexName		|3
+audioCodexParameter	|4
+audioFeedback		|5
+audioPropAttr		|6
+audioValAttr		|7
+brightness		|8
+cameraNightVision	|9
+cameraPan		|A
+cameraTilt		|B
+cameraZoom		|C
+coolingThreshold	|D
+currentDoorState	|E
+currentHeatCoolMode	|F
+currentHumidity		|10
+currentTemperature	|11
+heatingThreshold	|12
+hue			|13
+identify		|14
+inputVolume		|15
+ipCameraStart		|16
+ipCameraStop		|17
+lockControlPoint	|19
+lockAutoTimeout		|1A
+lockLastAction		|1C
+lockCurrentState	|1D
+lockTargetState		|1E
+logs			|1F
+manufactuer		|20
+modelName		|21
+motionDetect		|22
+serviceName		|23
+obstruction		|24
+on			|25
+outletInUse		|26
+outputVolume		|27
+rotationDirection	|28
+rotationSpeed		|29
+rtcpExtProp		|2A
+rtcpVideoPayload	|2B
+rtcpAudioPayload	|2C
+rtcpAudioClock		|2D
+rtcpProtocol		|2E
+saturation		|2F
+serialNumber		|30
+srtpCyptoSuite		|31
+targetDoorState		|32
+targetHeatCoolMode	|33
+targetHumidity		|34
+targetTemperature	|35
+temperatureUnit		|36
+version			|37
+videoCodexName		|38
+videoCodexPara		|39
+videoMirror		|3A
+videoPropAttr		|3B
+videoRotation		|3C
+videoValAttr		|3D
+
+Apple Accessory Service	|ID
+————————————————————————+——
+accessoryInfo		|3E
+camera			|3F
+fan			|40
+garageDoorOpener	|41
+lightBulb		|43
+lockManagement		|44
+lockMechanism		|45
+microphone		|46
+outlet			|47
+speaker			|48
+switch			|49
+thermostat		|4A
+
+For private sector, I recommend changing the first digit as 1 for characteristic, and 2 for service (there are 8 digit for id)
+In case there is conflict with future Apple defined characteristic. 
+
+Private Sector Defined Characteristic	|ID
+————————————————————————————————————————+————————
+
+Private Sector Defined Service		|ID
+————————————————————————————————————————+————————
+freezer					|20000001
