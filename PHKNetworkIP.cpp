@@ -752,6 +752,7 @@ void connectionInfo::handleAccessoryRequest() {
         bzero(buffer, 4096);
         len = read(subSocket, buffer, 4096);
         
+	//FIXME make sure buffer len > (2 + msgLen + 16)??
         if (len > 0) {
             uint16_t msgLen = (uint8_t)buffer[1]*256+(uint8_t)*buffer;
             
@@ -760,13 +761,13 @@ void connectionInfo::handleAccessoryRequest() {
             
             chacha20_setup(&chacha20, (const uint8_t *)controllerToAccessoryKey, 32, (uint8_t *)&numberOfMsgRec);
             numberOfMsgRec++;
-            
+
             //Ploy1305 key
             char temp[64];  bzero(temp, 64); char temp2[64];  bzero(temp2, 64);
             chacha20_encrypt(&chacha20, (const uint8_t*)temp, (uint8_t *)temp2, 64);
             bzero(decryptData, 2048);
             chacha20_decrypt(&chacha20, (const uint8_t *)&buffer[2], (uint8_t *)decryptData, msgLen);
-            
+
             char verify[16];    bzero(verify, 16);
             poly1305_init(&verifyContext, (const unsigned char*)temp2);
             {
@@ -786,14 +787,22 @@ void connectionInfo::handleAccessoryRequest() {
                 poly1305_update(&verifyContext, (const unsigned char *)&_len, 8);
             }
             poly1305_finish(&verifyContext, (unsigned char *)verify);
-            
+
+	    if(len >= (2 + msgLen + 16)
+		&& memcmp((void *)verify, (void *)&buffer[2 + msgLen], 16) == 0) {
+	    }
+	    else {
+		printf("Passed-in data is no-verified!\n");
+		continue;
+	    }
+
             pthread_mutex_lock(&mutex);
             
             //Output return
             char *resultData = 0; unsigned int resultLen = 0;
             handleAccessory(decryptData, msgLen, &resultData, &resultLen, this);
 
-	    //18 = 2(resultLen) + 16
+	    //18 = 2(resultLen) + 16(poly1305 versify data)
 	    char *reply = new char[resultLen+18];
             reply[0] = resultLen%256;
             reply[1] = (resultLen-(uint8_t)reply[0])/256;
