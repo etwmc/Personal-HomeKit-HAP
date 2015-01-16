@@ -154,7 +154,6 @@ void broadcastMessage(void *sender, char *resultData, size_t resultLen) {
             pthread_mutex_lock(&connection[i].mutex);
             
             chacha20_ctx chacha20;    bzero(&chacha20, sizeof(chacha20));
-            poly1305_context verifyContext; bzero(&verifyContext, sizeof(verifyContext));
             
             char temp[64];  bzero(temp, 64); char temp2[64];  bzero(temp2, 64);
             
@@ -167,6 +166,9 @@ void broadcastMessage(void *sender, char *resultData, size_t resultLen) {
             chacha20_encrypt(&chacha20, (const uint8_t*)temp, (uint8_t *)temp2, 64);
             chacha20_encrypt(&chacha20, (const uint8_t*)resultData, (uint8_t*)&reply[2], resultLen);
             
+	    //XXX FIXME
+#if 1
+            poly1305_context verifyContext; bzero(&verifyContext, sizeof(verifyContext));
             poly1305_init(&verifyContext, (const unsigned char*)temp2);
             {
                 char waste[16];
@@ -184,6 +186,12 @@ void broadcastMessage(void *sender, char *resultData, size_t resultLen) {
                 poly1305_update(&verifyContext, (const unsigned char *)&_len, 8);
             }
             poly1305_finish(&verifyContext, (unsigned char*)&reply[resultLen+2]);
+#else
+	    char verify[16];
+	    memset(verify, 0, 16);
+	    Poly1305_GenKey((const unsigned char *)temp2, (uint8_t *)reply, resultLen, Type_Data_With_Length, verify);
+	    memcpy((unsigned char*)&reply[resultLen+2], verify, 16);
+#endif
             
 	    write(socketNumber, reply, resultLen+18);
 	    delete [] reply;
@@ -244,6 +252,47 @@ void PHKNetworkIP::handleConnection() const {
     
     if (index < 0) close(subSocket);
 
+}
+
+// 2ByteS(datalen) + data_buf + 16Bytes(Verfied Key)
+// Type_Data_Without_Length
+//Passed-in buf is OMIT len and 16Bytes verfied key
+// Type_Data_With_Length
+//Passed-in buf is len and data_buf
+void connectionInfo::Poly1305_GenKey(const unsigned char * key, uint8_t * buf, uint16_t len, Poly1305Type_t type, char* verify)
+{
+	if (key == NULL || buf == NULL || len < 2 || verify == NULL)
+		return;
+
+	poly1305_context verifyContext; bzero(&verifyContext, sizeof(verifyContext));
+	poly1305_init(&verifyContext, key);
+
+	char waste[16];
+	bzero(waste, 16);
+
+	if (type == Type_Data_With_Length) {
+                poly1305_update(&verifyContext, (const unsigned char *)buf, 2);
+                poly1305_update(&verifyContext, (const unsigned char *)waste, 14);
+
+                poly1305_update(&verifyContext, (const unsigned char *)&buf[2], len);
+	}
+	else {
+		poly1305_update(&verifyContext, (const unsigned char *)buf, len);
+	}
+
+	poly1305_update(&verifyContext, (const unsigned char *)waste, 16-len%16);
+	unsigned long long _len;
+	if (type == Type_Data_With_Length) {
+		_len = 2;
+	}
+	else {
+		_len = 0;
+	}
+	poly1305_update(&verifyContext, (const unsigned char *)&_len, 8);
+	_len = len;
+	poly1305_update(&verifyContext, (const unsigned char *)&_len, 8);
+
+	poly1305_finish(&verifyContext, (unsigned char*)verify);
 }
 
 void connectionInfo::handlePairSeup() {
@@ -351,7 +400,7 @@ void connectionInfo::handlePairSeup() {
                 packageLen = msg.data.lengthForIndex(5);
                 char *encryptedData = new char[packageLen];
                 bcopy(encryptedPackage, encryptedData, packageLen-16);
-                char *mac = new char[16];
+                char mac[16];
                 bcopy(&encryptedPackage[packageLen-16], mac, 16);
                 
                 chacha20_ctx chacha20;    bzero(&chacha20, sizeof(chacha20));
@@ -360,23 +409,10 @@ void connectionInfo::handlePairSeup() {
                 //Ploy1305 key
                 char temp[64];  bzero(temp, 64); char temp2[64];  bzero(temp2, 64);
                 chacha20_encrypt(&chacha20, (const uint8_t*)temp, (uint8_t *)temp2, 64);
-                
+
                 char verify[16];  bzero(verify, 16);
-                poly1305_context verifyContext; bzero(&verifyContext, sizeof(verifyContext));
-                poly1305_init(&verifyContext, (const unsigned char*)temp2);
-                poly1305_update(&verifyContext, (const unsigned char *)encryptedData, packageLen-16);
-                {
-                    char *waste = new char[16];
-                    bzero(waste, 16);
-                    poly1305_update(&verifyContext, (const unsigned char *)waste, 16-packageLen%16);
-                    unsigned long long _len;
-                    _len = 0;
-                    poly1305_update(&verifyContext, (const unsigned char *)&_len, 8);
-                    _len = packageLen - 16;
-                    poly1305_update(&verifyContext, (const unsigned char *)&_len, 8);
-                }
-                poly1305_finish(&verifyContext, (unsigned char *)verify);
-                
+		Poly1305_GenKey((const unsigned char*)temp2, (unsigned char *)encryptedData, packageLen - 16, Type_Data_Without_Length, verify);
+
                 if (bcmp(verify, mac, 16)) {
                     PHKNetworkMessageDataRecord responseRecord;
 		    responseRecord.activate = true;
@@ -473,24 +509,11 @@ void connectionInfo::handlePairSeup() {
                             char buffer[64], key[64];   bzero(buffer, 64);
                             chacha20_encrypt(&ctx, (const uint8_t *)buffer, (uint8_t *)key, 64);
                             chacha20_encrypt(&ctx, (const uint8_t *)tlv8Data, (uint8_t *)tlv8Record.data, tlv8Len);
-                            
-                            poly1305_context polyCtx;   bzero(&polyCtx, sizeof(polyCtx));
-                            
-                            poly1305_init(&polyCtx, (const unsigned char *)key);
-                            poly1305_update(&polyCtx, (const unsigned char*)tlv8Record.data, tlv8Len);
-                            {
-                                char *waste = new char[16];
-                                bzero(waste, 16);
-                                poly1305_update(&polyCtx, (const unsigned char *)waste, 16-tlv8Len%16);
-                                unsigned long long _len;
-                                _len = 0;
-                                poly1305_update(&polyCtx, (const unsigned char *)&_len, 8);
-                                _len = tlv8Len;
-                                poly1305_update(&polyCtx, (const unsigned char *)&_len, 8);
-                                delete [] waste;
-                            }
-                            
-                            poly1305_finish(&polyCtx, (unsigned char *)&tlv8Record.data[tlv8Len]);
+
+			    char verify[16];
+			    memset(verify, 0, 16);
+			    Poly1305_GenKey((const unsigned char *)key, (unsigned char*)tlv8Record.data, tlv8Len, Type_Data_Without_Length, verify);
+			    memcpy((unsigned char *)&tlv8Record.data[tlv8Len], verify, 16);
                         }
                         
                         tlv8Record.activate = true; tlv8Record.index = 5;
@@ -616,24 +639,12 @@ void connectionInfo::handlePairVerify() {
                 chacha20_encrypt(&chacha, (uint8_t *)plainMsg, (uint8_t *)encryptMsg, msgLen);
                 
                 delete [] plainMsg;
-                
-                poly1305_context poly;
-                poly1305_init(&poly, (const unsigned char *)polyKey);
-                poly1305_update(&poly, (unsigned char *)encryptMsg, msgLen);
-                
-                {
-                    char *waste = new char[16];
-                    bzero(waste, 16);
-                    poly1305_update(&poly, (const unsigned char *)waste, 16-msgLen%16);
-                    unsigned long long _len;
-                    _len = 0;
-                    poly1305_update(&poly, (const unsigned char *)&_len, 8);
-                    _len = msgLen;
-                    poly1305_update(&poly, (const unsigned char *)&_len, 8);
-                    delete [] waste;
-                }
-                poly1305_finish(&poly, (unsigned char *)&encryptMsg[msgLen]);
-                
+
+		char verify[16];
+		memset(verify, 0, 16);
+		Poly1305_GenKey((const unsigned char *)polyKey, (uint8_t *)encryptMsg, msgLen, Type_Data_Without_Length, verify);
+		memcpy((unsigned char *)&encryptMsg[msgLen], verify, 16);
+
                 PHKNetworkMessageDataRecord encryptRecord;
 		encryptRecord.activate = true;
 		encryptRecord.index = 5;
@@ -659,23 +670,10 @@ void connectionInfo::handlePairVerify() {
                 //Ploy1305 key
                 char temp[64];  bzero(temp, 64); char temp2[64];  bzero(temp2, 64);
                 chacha20_encrypt(&chacha20, (const uint8_t*)temp, (uint8_t *)temp2, 64);
-                
+
                 char verify[16];    bzero(verify, 16);
-                poly1305_context verifyContext; bzero(&verifyContext, sizeof(verifyContext));
-                poly1305_init(&verifyContext, (const unsigned char*)temp2);
-                poly1305_update(&verifyContext, (const unsigned char *)encryptedData, packageLen-16);
-                {
-                    char waste[16];
-                    bzero(waste, 16);
-                    poly1305_update(&verifyContext, (const unsigned char *)waste, 16-packageLen%16);
-                    unsigned long long _len;
-                    _len = 0;
-                    poly1305_update(&verifyContext, (const unsigned char *)&_len, 8);
-                    _len = packageLen - 16;
-                    poly1305_update(&verifyContext, (const unsigned char *)&_len, 8);
-                }
-                poly1305_finish(&verifyContext, (unsigned char *)verify);
-                
+		Poly1305_GenKey((const unsigned char *)temp2, (uint8_t *)encryptedData, packageLen - 16, Type_Data_Without_Length, verify);
+
                 if (!bcmp(verify, &encryptedData[packageLen-16], 16)) {
                     char *decryptData = new char[packageLen-16];
                     chacha20_decrypt(&chacha20, (const uint8_t *)encryptedData, (uint8_t *)decryptData, packageLen-16);
@@ -757,36 +755,18 @@ void connectionInfo::handleAccessoryRequest() {
             uint16_t msgLen = (uint8_t)buffer[1]*256+(uint8_t)*buffer;
             
             chacha20_ctx chacha20;    bzero(&chacha20, sizeof(chacha20));
-            poly1305_context verifyContext; bzero(&verifyContext, sizeof(verifyContext));
             
             chacha20_setup(&chacha20, (const uint8_t *)controllerToAccessoryKey, 32, (uint8_t *)&numberOfMsgRec);
             numberOfMsgRec++;
 
-            //Ploy1305 key
             char temp[64];  bzero(temp, 64); char temp2[64];  bzero(temp2, 64);
             chacha20_encrypt(&chacha20, (const uint8_t*)temp, (uint8_t *)temp2, 64);
             bzero(decryptData, 2048);
             chacha20_decrypt(&chacha20, (const uint8_t *)&buffer[2], (uint8_t *)decryptData, msgLen);
 
+            //Ploy1305 key
             char verify[16];    bzero(verify, 16);
-            poly1305_init(&verifyContext, (const unsigned char*)temp2);
-            {
-                char waste[16];
-                bzero(waste, 16);
-                
-                poly1305_update(&verifyContext, (const unsigned char *)buffer, 2);
-                poly1305_update(&verifyContext, (const unsigned char *)waste, 14);
-                
-                poly1305_update(&verifyContext, (const unsigned char *)&buffer[2], msgLen);
-                poly1305_update(&verifyContext, (const unsigned char *)waste, 16-msgLen%16);
-                
-                unsigned long long _len;
-                _len = 2;
-                poly1305_update(&verifyContext, (const unsigned char *)&_len, 8);
-                _len = msgLen;
-                poly1305_update(&verifyContext, (const unsigned char *)&_len, 8);
-            }
-            poly1305_finish(&verifyContext, (unsigned char *)verify);
+	    Poly1305_GenKey((const unsigned char *)temp2, (uint8_t *)buffer, msgLen, Type_Data_With_Length, verify);
 
 	    if(len >= (2 + msgLen + 16)
 		&& memcmp((void *)verify, (void *)&buffer[2 + msgLen], 16) == 0) {
@@ -802,7 +782,7 @@ void connectionInfo::handleAccessoryRequest() {
             char *resultData = 0; unsigned int resultLen = 0;
             handleAccessory(decryptData, msgLen, &resultData, &resultLen, this);
 
-	    //18 = 2(resultLen) + 16(poly1305 versify data)
+	    //18 = 2(resultLen) + 16(poly1305 verify key)
 	    char *reply = new char[resultLen+18];
             reply[0] = resultLen%256;
             reply[1] = (resultLen-(uint8_t)reply[0])/256;
@@ -811,25 +791,10 @@ void connectionInfo::handleAccessoryRequest() {
             numberOfMsgSend++;
             chacha20_encrypt(&chacha20, (const uint8_t*)temp, (uint8_t *)temp2, 64);
             chacha20_encrypt(&chacha20, (const uint8_t*)resultData, (uint8_t*)&reply[2], resultLen);
-            
-            poly1305_init(&verifyContext, (const unsigned char*)temp2);
-            {
-                char waste[16];
-                bzero(waste, 16);
-                
-                poly1305_update(&verifyContext, (const unsigned char *)reply, 2);
-                poly1305_update(&verifyContext, (const unsigned char *)waste, 14);
-                
-                poly1305_update(&verifyContext, (const unsigned char *)&reply[2], resultLen);
-                if (resultLen%16) poly1305_update(&verifyContext, (const unsigned char *)waste, 16-resultLen%16);
-                unsigned long long _len;
-                _len = 2;
-                poly1305_update(&verifyContext, (const unsigned char *)&_len, 8);
-                _len = resultLen;
-                poly1305_update(&verifyContext, (const unsigned char *)&_len, 8);
-            }
-            poly1305_finish(&verifyContext, (unsigned char*)&reply[resultLen+2]);
-            
+
+	    Poly1305_GenKey((const unsigned char *)temp2, (uint8_t *)reply, resultLen, Type_Data_With_Length, verify);
+	    memcpy((unsigned char*)&reply[resultLen+2], verify, 16);
+
             write(subSocket, reply, resultLen+18);
             
             pthread_mutex_unlock(&mutex);

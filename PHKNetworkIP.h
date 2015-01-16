@@ -41,6 +41,11 @@ typedef enum
     State_Pair_Verify_M4          = 4,
 } PairVerifyState_t;
 
+typedef enum
+{
+    Type_Data_Without_Length      = 1,
+    Type_Data_With_Length         = 2,
+} Poly1305Type_t;
 
 void broadcastMessage(void *sender, char *resultData, size_t resultLen);
 
@@ -118,6 +123,8 @@ public:
     void handlePairSeup();
     void handlePairVerify();
     void handleAccessoryRequest();
+
+    void Poly1305_GenKey(const unsigned char * key, uint8_t * buf, uint16_t len, Poly1305Type_t type, char* verify);
     
     void addNotify(void *target) {
         for (int i = 0; i < numberOfNotifiableValue; i++) {
