@@ -185,8 +185,9 @@ void broadcastMessage(void *sender, char *resultData, size_t resultLen) {
             }
             poly1305_finish(&verifyContext, (unsigned char*)&reply[resultLen+2]);
             
-            write(socketNumber, reply, resultLen+18);
-            pthread_mutex_unlock(&connection[i].mutex);
+	    write(socketNumber, reply, resultLen+18);
+	    delete [] reply;
+	    pthread_mutex_unlock(&connection[i].mutex);
         }
     }
 }
@@ -506,7 +507,10 @@ void connectionInfo::handlePairSeup() {
                     write(subSocket, (const void *)responseBuffer, (size_t)responseLen);
                     delete [] responseBuffer;
                 }
-                return;
+
+		delete []encryptedData;
+
+		return;
             }
                 break;
         }
@@ -631,8 +635,12 @@ void connectionInfo::handlePairVerify() {
                 poly1305_finish(&poly, (unsigned char *)&encryptMsg[msgLen]);
                 
                 PHKNetworkMessageDataRecord encryptRecord;
-                encryptRecord.activate = true;  encryptRecord.index = 5; encryptRecord.length = msgLen+16;  encryptRecord.data = new char[encryptRecord.length];    bcopy(encryptMsg, encryptRecord.data, encryptRecord.length);
-                response.data.addRecord(encryptRecord);
+		encryptRecord.activate = true;
+		encryptRecord.index = 5;
+		encryptRecord.length = msgLen+16;
+		encryptRecord.data = new char[encryptRecord.length];
+		bcopy(encryptMsg, encryptRecord.data, encryptRecord.length);
+		response.data.addRecord(encryptRecord);
                 
                 delete [] encryptMsg;
                 delete [] polyKey;
@@ -692,9 +700,13 @@ void connectionInfo::handlePairVerify() {
                         
                     } else {
                         PHKNetworkMessageDataRecord error;
-                        error.activate = true;  error.data = new char[1];   error.data[0] = 2;  error.index = 7;    error.length = 1;
-                        response.data.addRecord(error);
-                    }
+                        error.activate = true;
+			error.data = new char[1];
+			error.data[0] = 2;
+			error.index = 7;
+			error.length = 1;
+			response.data.addRecord(error);
+		    }
                     
                     delete [] decryptData;
                 }
@@ -780,8 +792,9 @@ void connectionInfo::handleAccessoryRequest() {
             //Output return
             char *resultData = 0; unsigned int resultLen = 0;
             handleAccessory(decryptData, msgLen, &resultData, &resultLen, this);
-            
-            char *reply = new char[resultLen+18];
+
+	    //18 = 2(resultLen) + 16
+	    char *reply = new char[resultLen+18];
             reply[0] = resultLen%256;
             reply[1] = (resultLen-(uint8_t)reply[0])/256;
             
