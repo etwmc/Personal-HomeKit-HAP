@@ -1,3 +1,4 @@
+#pragma once
 //
 //  PHKNetworkIP.h
 //  Workbench
@@ -5,9 +6,6 @@
 //  Created by Wai Man Chan on 4/8/14.
 //
 //
-
-#ifndef __Workbench__PHKNetworkIP__
-#define __Workbench__PHKNetworkIP__
 
 #include <stdio.h>
 #include <sys/socket.h>
@@ -157,5 +155,3 @@ public:
 };
 
 void updateConfiguration();
-
-#endif /* defined(__Workbench__PHKNetworkIP__) */

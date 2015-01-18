@@ -1,3 +1,4 @@
+#pragma once
 //
 //  PHKAccessory.h
 //  Workbench
@@ -6,9 +7,4 @@
 //
 //
 
-#ifndef __Workbench__PHKAccessory__
-#define __Workbench__PHKAccessory__
-
 void initAccessorySet();
-
-#endif /* defined(__Workbench__PHKAccessory__) */
