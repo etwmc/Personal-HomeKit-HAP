@@ -291,13 +291,21 @@ public:
 };
 
 class AccessorySet {
+private:
     vector<Accessory *> _accessories;
     int _aid = 0;
-public:
-    pthread_mutex_t accessoryMutex;
     AccessorySet() {
         pthread_mutex_init(&accessoryMutex, NULL);
     }
+    AccessorySet(AccessorySet const&);
+    void operator=(AccessorySet const&);
+public:
+    static AccessorySet& getInstance() {
+        static AccessorySet instance;
+
+        return instance;
+    }
+    pthread_mutex_t accessoryMutex;
     short numberOfAccessory() {
         return _accessories.size();
     }
