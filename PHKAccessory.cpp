@@ -13,7 +13,6 @@
 const char hapJsonType[] = "application/hap+json";
 const char pairingTlv8Type[] = "application/pairing+tlv8";
 
-extern AccessorySet *accSet;
 
 //Wrap to JSON
 inline string wrap(const char *str) { return (string)"\""+str+"\""; }
@@ -370,7 +369,7 @@ void handleAccessory(const char *request, unsigned int requestLen, char **reply,
         printf("Ask for accessories info\n");
 #endif
         statusCode = 200;
-        string desc = accSet->describe();
+        string desc = AccessorySet::getInstance().describe();
         replyDataLen = desc.length();
         replyData = new char[replyDataLen+1];
         bcopy(desc.c_str(), replyData, replyDataLen);
@@ -413,12 +412,12 @@ void handleAccessory(const char *request, unsigned int requestLen, char **reply,
             statusCode = 200;
         }
     } else if (strncmp(path, "/characteristics", 16) == 0){
-        pthread_mutex_lock(&accSet->accessoryMutex);
+        pthread_mutex_lock(&AccessorySet::getInstance().accessoryMutex);
         if (strncmp(method, "GET", 3) == 0) {
             //Read characteristics
             int aid = 0;    int iid = 0;
             sscanf(path, "/characteristics?id=%d.%d", &aid, &iid);
-            Accessory *a = accSet->accessoryAtIndex(aid);
+            Accessory *a = AccessorySet::getInstance().accessoryAtIndex(aid);
             if (a != NULL) {
                 characteristics *c = a->characteristicsAtIndex(iid);
                 if (c != NULL) {
@@ -473,7 +472,7 @@ void handleAccessory(const char *request, unsigned int requestLen, char **reply,
                     }
                 }
                 
-                Accessory *a = accSet->accessoryAtIndex(aid);
+                Accessory *a = AccessorySet::getInstance().accessoryAtIndex(aid);
                 if (a==NULL) {
                     statusCode = 400;
                 } else {
@@ -527,7 +526,7 @@ void handleAccessory(const char *request, unsigned int requestLen, char **reply,
         } else {
             return;
         }
-        pthread_mutex_unlock(&accSet->accessoryMutex);
+        pthread_mutex_unlock(&AccessorySet::getInstance().accessoryMutex);
     } else {
         //Error
 #if HomeKitLog == 1
