@@ -41,4 +41,4 @@ srp/%.o: srp/%.c
 %.o: %.cpp
 	$(CPP) $(CFLAG) -w -c $<
 clean:
-	rm -rf --no-root ./*.o Chacha20/*.o curve25519/*.o ed25519-donna/*.o poly1305-opt-master/*.o rfc6234-master/*.o srp/*.o PHK $(PHK_LIBFILE)
+	rm -rf *.o Chacha20/*.o curve25519/*.o ed25519-donna/*.o poly1305-opt-master/*.o rfc6234-master/*.o srp/*.o PHK $(PHK_LIBFILE)
