@@ -76,7 +76,7 @@ switch			|49
 thermostat		|4A
 
 For private sector, I recommend changing the first digit as 1 for characteristic, and 2 for service (there are 8 digit for id)
-In case there is conflict with future Apple defined characteristic. 
+In case there is conflict with future Apple defined characteristic.
 
 Private Sector Defined Characteristic	|ID
 ————————————————————————————————————————+————————

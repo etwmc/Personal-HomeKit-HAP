@@ -18,12 +18,12 @@ const char pairingTlv8Type[] = "application/pairing+tlv8";
 inline string wrap(const char *str) { return (string)"\""+str+"\""; }
 inline string attribute(unsigned short type, unsigned short acclaim, int p, bool value) {
     string result;
-    
+
     result += wrap("value")+":";
     if (value) result += "true";
     else result += "false";
     result += ",";
-    
+
     result += wrap("perms")+":";
     result += "[";
     if (p & premission_read) result += wrap("pr")+",";
@@ -32,41 +32,41 @@ inline string attribute(unsigned short type, unsigned short acclaim, int p, bool
     result = result.substr(0, result.size()-1);
     result += "]";
     result += ",";
-    
+
     char tempStr[4];
     snprintf(tempStr, 4, "%X", type);
     result += wrap("type")+":"+wrap(tempStr);
     result += ",";
-    
+
     snprintf(tempStr, 4, "%hd", acclaim);
     result += wrap("iid")+":"+tempStr;
     result += ",";
-    
+
     result += "\"format\":\"bool\"";
-    
+
     return "{"+result+"}";
 }
 inline string attribute(unsigned short type, unsigned short acclaim, int p, int value, int minVal, int maxVal, int step, unit valueUnit) {
     string result;
     char tempStr[4];
-    
+
     snprintf(tempStr, 4, "%d", value);
-    
+
     result += wrap("value")+":"+tempStr;
     result += ",";
-    
+
     snprintf(tempStr, 4, "%d", minVal);
     if (minVal != INT32_MIN)
         result += wrap("minValue")+":"+tempStr+",";
-    
+
     snprintf(tempStr, 4, "%d", maxVal);
     if (maxVal != INT32_MAX)
         result += wrap("maxValue")+":"+tempStr+",";
-    
+
     snprintf(tempStr, 4, "%d", step);
     if (step > 0)
         result += wrap("minStep")+":"+tempStr+",";
-    
+
     result += wrap("perms")+":";
     result += "[";
     if (p & premission_read) result += wrap("pr")+",";
@@ -75,15 +75,15 @@ inline string attribute(unsigned short type, unsigned short acclaim, int p, int 
     result = result.substr(0, result.size()-1);
     result += "]";
     result += ",";
-    
+
     snprintf(tempStr, 4, "%X", type);
     result += wrap("type")+":"+wrap(tempStr);
     result += ",";
-    
+
     snprintf(tempStr, 4, "%hd", acclaim);
     result += wrap("iid")+":"+tempStr;
     result += ",";
-    
+
     switch (valueUnit) {
         case unit_arcDegree:
             result += wrap("unit")+":"+wrap("arcdegrees")+",";
@@ -95,32 +95,32 @@ inline string attribute(unsigned short type, unsigned short acclaim, int p, int 
             result += wrap("unit")+":"+wrap("percentage")+",";
             break;
     }
-    
+
     result += "\"format\":\"int\"";
-    
+
     return "{"+result+"}";
 }
 inline string attribute(unsigned short type, unsigned short acclaim, int p, float value, float minVal, float maxVal, float step, unit valueUnit) {
     string result;
     char tempStr[4];
-    
+
     snprintf(tempStr, 4, "%f", value);
-    
+
     result += wrap("value")+":"+tempStr;
     result += ",";
-    
+
     snprintf(tempStr, 4, "%f", minVal);
     if (minVal != INT32_MIN)
         result += wrap("minValue")+":"+tempStr+",";
-    
+
     snprintf(tempStr, 4, "%f", maxVal);
     if (maxVal != INT32_MAX)
         result += wrap("maxValue")+":"+tempStr+",";
-    
+
     snprintf(tempStr, 4, "%f", step);
     if (step > 0)
         result += wrap("minStep")+":"+tempStr+",";
-    
+
     result += wrap("perms")+":";
     result += "[";
     if (p & premission_read) result += wrap("pr")+",";
@@ -129,15 +129,15 @@ inline string attribute(unsigned short type, unsigned short acclaim, int p, floa
     result = result.substr(0, result.size()-1);
     result += "]";
     result += ",";
-    
+
     snprintf(tempStr, 4, "%X", type);
     result += wrap("type")+":"+wrap(tempStr);
     result += ",";
-    
+
     snprintf(tempStr, 4, "%hd", acclaim);
     result += wrap("iid")+":"+tempStr;
     result += ",";
-    
+
     switch (valueUnit) {
         case unit_arcDegree:
             result += wrap("unit")+":"+wrap("arcdegrees")+",";
@@ -149,18 +149,18 @@ inline string attribute(unsigned short type, unsigned short acclaim, int p, floa
             result += wrap("unit")+":"+wrap("percentage")+",";
             break;
     }
-    
+
     result += "\"format\":\"float\"";
-    
+
     return "{"+result+"}";
 }
 inline string attribute(unsigned short type, unsigned short acclaim, int p, string value, unsigned short len) {
     string result;
     char tempStr[4];
-    
+
     result += wrap("value")+":"+wrap(value.c_str());
     result += ",";
-    
+
     result += wrap("perms")+":";
     result += "[";
     if (p & premission_read) result += wrap("pr")+",";
@@ -169,51 +169,51 @@ inline string attribute(unsigned short type, unsigned short acclaim, int p, stri
     result = result.substr(0, result.size()-1);
     result += "]";
     result += ",";
-    
+
     snprintf(tempStr, 4, "%X", type);
     result += wrap("type")+":"+wrap(tempStr);
     result += ",";
-    
+
     snprintf(tempStr, 4, "%hd", acclaim);
     result += wrap("iid")+":"+tempStr;
     result += ",";
-    
+
     if (len > 0) {
         snprintf(tempStr, 4, "%hd", len);
         result += wrap("maxLen")+":"+tempStr;
         result += ",";
     }
-    
+
     result += "\"format\":\"string\"";
-    
+
     return "{"+result+"}";
 }
 inline string arrayWrap(string *s, unsigned short len) {
     string result;
-    
+
     result += "[";
-    
+
     for (int i = 0; i < len; i++) {
         result += s[i]+",";
     }
     result = result.substr(0, result.size()-1);
-    
+
     result += "]";
-    
+
     return result;
 }
 inline string dictionaryWrap(string *key, string *value, unsigned short len) {
     string result;
-    
+
     result += "{";
-    
+
     for (int i = 0; i < len; i++) {
         result += wrap(key[i].c_str())+":"+value[i]+",";
     }
     result = result.substr(0, result.size()-1);
-    
+
     result += "}";
-    
+
     return result;
 }
 
@@ -262,14 +262,14 @@ string Service::describe() {
 string Accessory::describe() {
     string keys[2];
     string values[2];
-    
+
     {
         keys[0] = "aid";
         char temp[8];
         sprintf(temp, "%d", aid);
         values[0] = temp;
     }
-    
+
     {
         //Form services list
         int noOfService = numberOfService();
@@ -281,7 +281,7 @@ string Accessory::describe() {
         values[1] = arrayWrap(services, noOfService);
         delete [] services;
     }
-    
+
     string result = dictionaryWrap(keys, values, 2);
     return result;
 }
@@ -308,19 +308,19 @@ void *announce(void *info) {
     broadcastInfo *_info = (broadcastInfo *)info;
     void *sender = _info->sender;
     char *desc = _info->desc;
-    
+
     char *reply = new char[1024];
     int len = snprintf(reply, 1024, "EVENT/1.0 200 OK\r\n\
 Content-Type: application/hap+json\r\n\
 Content-Length: %lu\r\n\r\n%s", strlen(desc), desc);
-    
+
 #if HomeKitLog == 1 && HomeKitReplyHeaderLog==1
     printf("%s\n", reply);
 #endif
-    
+
     broadcastMessage(sender, reply, len);
     delete [] reply;
-    
+
     delete [] desc;
     delete [] info;
 }
@@ -340,29 +340,29 @@ void handleAccessory(const char *request, unsigned int requestLen, char **reply,
             index = 4;
         }
     }
-    
+
     char path[32];
     int i;
     for (i = 0; i < 32 && request[index] != ' '; i++, index++) {
         path[i] = request[index];
     }
     path[i] = 0;
-    
+
     const char *dataPtr = request;
     while (true) {
         dataPtr = &dataPtr[1];
         if (dataPtr[0] == '\r' && dataPtr[1] == '\n' && dataPtr[2] == '\r' && dataPtr[3] == '\n') break;
     }
-    
+
     dataPtr += 4;
-    
+
     char *replyData = NULL;  unsigned short replyDataLen = 0;
-    
+
     int statusCode;
-    
+
     const char *protocol = "HTTP/1.1";
     const char *returnType = hapJsonType;
-    
+
     if (strcmp(path, "/accessories") == 0) {
         //Publish the characterists of the accessories
 #if HomeKitLog == 1
@@ -433,7 +433,7 @@ void handleAccessory(const char *request, unsigned int requestLen, char **reply,
                     string d = "characteristics";
                     result = arrayWrap(&result, 1);
                     result = dictionaryWrap(&d, &result, 1);
-                    
+
                     replyDataLen = result.length();
                     replyData = new char[replyDataLen+1];
                     replyData[replyDataLen] = 0;
@@ -448,17 +448,17 @@ void handleAccessory(const char *request, unsigned int requestLen, char **reply,
             }
         } else if (strncmp(method, "PUT", 3) == 0) {
             //Change characteristics
-            
+
             char characteristicsBuffer[1000];
             sscanf(dataPtr, "{\"characteristics\":[{%[^]]s}", characteristicsBuffer);
-            
+
             char *buffer2 = characteristicsBuffer;
             while (strlen(buffer2) && statusCode != 400) {
                 bool reachLast = false; bool updateNotify = false;
                 char *buffer1;
                 buffer1 = strtok_r(buffer2, "}", &buffer2);
                 if (*buffer2 != 0) buffer2+=2;
-                
+
                 int aid = 0;    int iid = 0; char value[16];
                 int result = sscanf(buffer1, "\"aid\":%d,\"iid\":%d,\"value\":%s", &aid, &iid, value);
                 if (result == 2) {
@@ -471,13 +471,13 @@ void handleAccessory(const char *request, unsigned int requestLen, char **reply,
                         updateNotify = true;
                     }
                 }
-                
+
                 Accessory *a = AccessorySet::getInstance().accessoryAtIndex(aid);
                 if (a==NULL) {
                     statusCode = 400;
                 } else {
                     characteristics *c = a->characteristicsAtIndex(iid);
-                    
+
                     if (updateNotify) {
 #if HomeKitLog == 1
                         printf("Ask to notify one characteristics: %d . %d -> %s\n", aid, iid, value);
@@ -487,7 +487,7 @@ void handleAccessory(const char *request, unsigned int requestLen, char **reply,
                         } else {
                             if (c->notifiable()) {
                                 sender->addNotify(c);
-                                
+
                                 statusCode = 204;
                             } else {
                                 statusCode = 400;
@@ -502,7 +502,7 @@ void handleAccessory(const char *request, unsigned int requestLen, char **reply,
                         } else {
                             if (c->writable()) {
                                 c->setValue(value);
-                                
+
                                 char *broadcastTemp = new char[1024];
                                 snprintf(broadcastTemp, 1024, "{\"characteristics\":[{%s}]}", buffer1);
                                 broadcastInfo * info = new broadcastInfo;
@@ -510,19 +510,19 @@ void handleAccessory(const char *request, unsigned int requestLen, char **reply,
                                 info->desc = broadcastTemp;
                                 pthread_t thread;
                                 pthread_create(&thread, NULL, announce, info);
-                                
+
                                 statusCode = 204;
-                                
+
                             } else {
                                 statusCode = 400;
                             }
                         }
                     }
-                    
+
                 }
-                
+
             }
-            
+
         } else {
             return;
         }
@@ -536,7 +536,7 @@ void handleAccessory(const char *request, unsigned int requestLen, char **reply,
         printf("%s", path);
         statusCode = 404;
     }
-    
+
     //Calculate the length of header
     char * tmp = new char[256];
     bzero(tmp, 256);
@@ -544,7 +544,7 @@ void handleAccessory(const char *request, unsigned int requestLen, char **reply,
 Content-Type: %s\r\n\
 Content-Length: %u\r\n\r\n", protocol, statusCode, returnType, replyDataLen);
     delete [] tmp;
-    
+
     //replyLen should omit the '\0'.
     (*replyLen) = len+replyDataLen;
     //reply should add '\0', or the printf is incorrect
@@ -558,33 +558,33 @@ Content-Length: %u\r\n\r\n", protocol, statusCode, returnType, replyDataLen);
         bcopy(replyData, &(*reply)[len], replyDataLen);
         delete [] replyData;
     }
-    
+
 #if HomeKitLog == 1 && HomeKitReplyHeaderLog==1
     printf("Reply: %s\n", *reply);
 #endif
-    
+
 }
 
 void addInfoServiceToAccessory(Accessory *acc, string accName, string manufactuerName, string modelName, string serialNumber, identifyFunction identifyCallback) {
     Service *infoService = new Service(charType_accessoryInfo);
     acc->addService(infoService);
-    
+
     stringCharacteristics *accNameCha = new stringCharacteristics(charType_serviceName, premission_read, 0);
     accNameCha->setValue(accName);
     acc->addCharacteristics(infoService, accNameCha);
-    
+
     stringCharacteristics *manNameCha = new stringCharacteristics(charType_manufactuer, premission_read, 0);
     manNameCha->setValue(manufactuerName);
     acc->addCharacteristics(infoService, manNameCha);
-    
+
     stringCharacteristics *modelNameCha = new stringCharacteristics(charType_modelName, premission_read, 0);
     modelNameCha->setValue(modelName);
     acc->addCharacteristics(infoService, modelNameCha);
-    
+
     stringCharacteristics *serialNameCha = new stringCharacteristics(charType_serialNumber, premission_read, 0);
     serialNameCha->setValue(serialNumber);
     acc->addCharacteristics(infoService, serialNameCha);
-    
+
     boolCharacteristics *identify = new boolCharacteristics(charType_identify, premission_write);
     identify->setValue("false");
     identify->valueChangeFunctionCall = identifyCallback;

@@ -106,24 +106,24 @@ class connectionInfo {
 public:
     pthread_t thread;
     pthread_mutex_t mutex;
-    
+
     bool connected = false;
-    
+
     uint8_t controllerToAccessoryKey[32];
     uint8_t accessoryToControllerKey[32];
     unsigned long long numberOfMsgRec = 0;
     unsigned long long numberOfMsgSend = 0;
     int subSocket = -1;
     char buffer[4096];
-    
+
     void *notificationList[numberOfNotifiableValue];
-    
+
     void handlePairSeup();
     void handlePairVerify();
     void handleAccessoryRequest();
 
     void Poly1305_GenKey(const unsigned char * key, uint8_t * buf, uint16_t len, Poly1305Type_t type, char* verify);
-    
+
     void addNotify(void *target) {
         for (int i = 0; i < numberOfNotifiableValue; i++) {
             if (notificationList[i] == 0) {

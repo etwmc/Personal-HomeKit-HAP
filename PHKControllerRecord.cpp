@@ -28,12 +28,12 @@ vector<PHKKeyRecord>readIn() {
 #else
     fs.open(controllerRecordsAddress, std::ifstream::in);
 #endif
-    
+
     char buffer[69];
-    
+
     PHKKeyRecord record;
     vector<PHKKeyRecord> results;
-    
+
 #if MCU
 #else
     while (fs.is_open()&&fs.good()&&!fs.eof()) {
@@ -47,20 +47,20 @@ vector<PHKKeyRecord>readIn() {
 #else
     fs.close();
 #endif
-    
+
     return results;
 }
 
 void addControllerKey(PHKKeyRecord record) {
     if (doControllerKeyExist(record) == false) {
         controllerRecords.push_back(record);
-        
+
 #if MCU
 #else
         ofstream fs;
         fs.open(controllerRecordsAddress, std::ofstream::trunc);
 #endif
-        
+
         for (vector<PHKKeyRecord>::iterator it = controllerRecords.begin(); it != controllerRecords.end(); it++) {
 #if MCU
 #else
@@ -69,7 +69,7 @@ void addControllerKey(PHKKeyRecord record) {
 #endif
         }
         fs.close();
-        
+
     }
 }
 

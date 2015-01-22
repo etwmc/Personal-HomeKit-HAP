@@ -3,12 +3,12 @@ This is a dymanic version (runtime add/remove accessories/services). For static 
 Now support multiple characteristic, notify function
 ===============
 Dear Lawyer of Apple, <br>
-If you want me to pull down the code, just send me an email. (No phone call, I don't pick up unknown number. ) I'm a reasonable kid, and I like Apple, so no need for DMCA, just talk to me, we can make a deal. 
+If you want me to pull down the code, just send me an email. (No phone call, I don't pick up unknown number. ) I'm a reasonable kid, and I like Apple, so no need for DMCA, just talk to me, we can make a deal.
 
-Build method: 
-After copy the codes, please follow these steps: 
+Build method:
+After copy the codes, please follow these steps:
 
-1. On non-OSX platform, please install avahi-deamon (or any dns-sd implement), clang and OpenSSL. 
+1. On non-OSX platform, please install avahi-deamon (or any dns-sd implement), clang and OpenSSL.
 2. Set the following value in Configuration.h<br>
   i. HomeKitLog -> Whether the program return message to console<br>
 
@@ -22,7 +22,7 @@ After copy the codes, please follow these steps:
 
   vi. (IMPORTANT) If you are porting the program to MCU (NOT OFFICIAL TESTED), change MCU to 1, and implement pair record service in PHKControllerRecord.cpp, as MCU usually use EEPROM instead a file system. <br>
 
-3. Implement Accessory function: 
+3. Implement Accessory function:
   The program publish a light service (and identify service, which is the essential function of any HomeKit accessory). However, the service does nothing as the variety configuration one could come up to achieve this project (I'm currently using a Ubuntu server, with serial connected Arduino)<br>
 
   Therefore, change the PHKArduinoLightInterface.c to your own configuration
@@ -35,11 +35,11 @@ To create your own service, please reference to the Accessory.cpp. You can add c
 
 (Please beware the number of characteristic, service and accessory, and the getter based on id is hard coded in the numberOf_ and _AtIndex. This is done to reduce the multithread complexity. So if you are going to implement a dynamic setting (for example, make a accessory bridge with PnP accessories), please keep the function be thread-safe at all time. )
 <br>
-4. Then, make and enjoy. 
+4. Then, make and enjoy.
 <br>
 ===============
 
-This is a spin-off project from my attempt to build a Siri controlled night light, and it will provide source code to build a HomeKit support accessories. 
+This is a spin-off project from my attempt to build a Siri controlled night light, and it will provide source code to build a HomeKit support accessories.
 
 
 1. Publish the device as a HomeKit
@@ -49,10 +49,10 @@ This is a spin-off project from my attempt to build a Siri controlled night ligh
 5. Provide the controller the service about the accessory
 6. Allow controller to update value
 
-Current Requirment: 
+Current Requirment:
 1. OpenSSL
 2. Avahi (For Linux)
 
-Future Plan: 
+Future Plan:
 1. Support microcontroller
 2. Notify controller about value updated

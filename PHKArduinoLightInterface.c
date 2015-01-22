@@ -21,30 +21,30 @@ void setupPort() {
     printf("Serial Port: %d\n", serialPort);
     if (serialPort >= 0) {
         struct termios options;
-        
+
         /*
          * Get the current options for the port...
          */
-        
+
         tcgetattr(serialPort, &options);
-        
+
         /*
          * Set the baud rates to 19200...
          */
-        
+
         cfsetispeed(&options, B9600);
         cfsetospeed(&options, B9600);
-        
+
         /*
          * Enable the receiver and set local mode...
          */
-        
+
         options.c_cflag |= (CLOCAL | CREAD);
-        
+
         /*
          * Set the new options for the port...
          */
-        
+
         tcsetattr(serialPort, TCSANOW, &options);
     }
 }

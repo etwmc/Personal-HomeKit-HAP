@@ -20,7 +20,7 @@ int main(int argc, const char * argv[]) {
     // insert code here...
     initAccessorySet();
     setupPort();
-    
+
     PHKNetworkIP networkIP;
     do {
         networkIP.handleConnection();

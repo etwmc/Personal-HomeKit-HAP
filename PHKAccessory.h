@@ -92,7 +92,7 @@ typedef enum {
     charType_videoPropAttr      = 0x3B,
     charType_videoRotation      = 0x3C,
     charType_videoValAttr       = 0x3D,
-    
+
 #pragma - The following is service provide
     charType_accessoryInfo      = 0x3E,
     charType_camera             = 0x3F,
@@ -124,7 +124,7 @@ typedef enum {
 
 class characteristics {
 public:
-    
+
     const unsigned short type;
     const int premission;
     int iid;
