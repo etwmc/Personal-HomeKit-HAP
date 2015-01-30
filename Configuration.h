@@ -1,3 +1,4 @@
+#pragma once
 //
 //  Configuration.h
 //  Workbench
@@ -5,9 +6,6 @@
 //  Created by Wai Man Chan on 10/27/14.
 //
 //
-
-#ifndef Workbench_Configuration_h
-#define Workbench_Configuration_h
 
 #define HomeKitLog 1
 #define HomeKitReplyHeaderLog 1
@@ -47,5 +45,3 @@ typedef SHA512_CTX SHACTX;
 #define SHAFinal SHA512_Final
 #define SHA_DIGESTSIZE 64
 #define SHA_BlockSize 128
-
-#endif

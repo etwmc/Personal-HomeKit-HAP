@@ -1,3 +1,4 @@
+#pragma once
 //
 //  PHKAccessory.h
 //  Workbench
@@ -91,7 +92,7 @@ typedef enum {
     charType_videoPropAttr      = 0x3B,
     charType_videoRotation      = 0x3C,
     charType_videoValAttr       = 0x3D,
-    
+
 #pragma - The following is service provide
     charType_accessoryInfo      = 0x3E,
     charType_camera             = 0x3F,
@@ -123,7 +124,7 @@ typedef enum {
 
 class characteristics {
 public:
-    
+
     const unsigned short type;
     const int premission;
     int iid;
@@ -290,13 +291,21 @@ public:
 };
 
 class AccessorySet {
+private:
     vector<Accessory *> _accessories;
     int _aid = 0;
-public:
-    pthread_mutex_t accessoryMutex;
     AccessorySet() {
         pthread_mutex_init(&accessoryMutex, NULL);
     }
+    AccessorySet(AccessorySet const&);
+    void operator=(AccessorySet const&);
+public:
+    static AccessorySet& getInstance() {
+        static AccessorySet instance;
+
+        return instance;
+    }
+    pthread_mutex_t accessoryMutex;
     short numberOfAccessory() {
         return _accessories.size();
     }
