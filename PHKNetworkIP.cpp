@@ -329,7 +329,8 @@ void connectionInfo::handlePairSeup() {
                 }
 
                 SRP_RESULT result = SRP_set_username(srp, "Pair-Setup");
-                result = SRP_set_params(srp, (const unsigned char *)modulusStr, 384, (const unsigned char *)generator, 1, saltChar, 16);
+                int modulusSize = sizeof(modulusStr) / sizeof(modulusStr[0]);
+                result = SRP_set_params(srp, (const unsigned char *)modulusStr, modulusSize, (const unsigned char *)generator, 1, saltChar, 16);
                 result = SRP_set_auth_password(srp, devicePassword);
                 result = SRP_gen_pub(srp, &publicKey);
 
