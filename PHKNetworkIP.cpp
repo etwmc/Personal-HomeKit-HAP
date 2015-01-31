@@ -317,6 +317,9 @@ void connectionInfo::handlePairSeup() {
         *stateRecord.data = (char)state+1;
         switch (state) {
             case State_M1_SRPStartRequest: {
+#if HomeKitLog == 1
+		printf("%s, %d: State_M1_SRPStartRequest\n", __func__, __LINE__);
+#endif
                 PHKNetworkMessageDataRecord saltRec;
                 PHKNetworkMessageDataRecord publicKeyRec;
                 unsigned char saltChar[16];
@@ -326,7 +329,8 @@ void connectionInfo::handlePairSeup() {
                 }
 
                 SRP_RESULT result = SRP_set_username(srp, "Pair-Setup");
-                result = SRP_set_params(srp, (const unsigned char *)modulusStr, 384, (const unsigned char *)generator, 1, saltChar, 16);
+                int modulusSize = sizeof(modulusStr) / sizeof(modulusStr[0]);
+                result = SRP_set_params(srp, (const unsigned char *)modulusStr, modulusSize, (const unsigned char *)generator, 1, saltChar, 16);
                 result = SRP_set_auth_password(srp, devicePassword);
                 result = SRP_gen_pub(srp, &publicKey);
 
@@ -347,6 +351,9 @@ void connectionInfo::handlePairSeup() {
             }
                 break;
             case State_M3_SRPVerifyRequest: {
+#if HomeKitLog == 1
+		printf("%s, %d: State_M3_SRPVerifyRequest\n", __func__, __LINE__);
+#endif
                 const char *keyStr = 0;
                 int keyLen = 0;
                 const char *proofStr;
@@ -394,7 +401,10 @@ void connectionInfo::handlePairSeup() {
             }
                 break;
             case State_M5_ExchangeRequest: {
-
+#if HomeKitLog == 1
+		printf("%s, %d: State_M5_ExchangeRequest\n", __func__, __LINE__);
+#endif
+                
                 const char *encryptedPackage = NULL;int packageLen = 0;
                 encryptedPackage = msg.data.dataPtrForIndex(5);
                 packageLen = msg.data.lengthForIndex(5);
@@ -540,6 +550,9 @@ void connectionInfo::handlePairSeup() {
         mResponse.data.addRecord(stateRecord);
         mResponse.getBinaryPtr(&responseBuffer, &responseLen);
         if (responseBuffer) {
+#if HomeKitLog == 1
+	    printf("%s, %d, responseBuffer = %s, responseLen = %d\n", __func__, __LINE__, responseBuffer, responseLen);
+#endif
             int len = write(subSocket, (const void *)responseBuffer, (size_t)responseLen);
             delete [] responseBuffer;
 #if HomeKitLog == 1
@@ -722,8 +735,10 @@ void connectionInfo::handlePairVerify() {
 
         char *repBuffer = 0;  int repLen = 0;
         response.getBinaryPtr(&repBuffer, &repLen);
-        write(subSocket, repBuffer, repLen);
-        delete [] repBuffer;
+	if (repBuffer) {
+		write(subSocket, repBuffer, repLen);
+		delete [] repBuffer;
+	}
     } while (!end && read(subSocket, buffer, 4096) > 0);
 
 }
