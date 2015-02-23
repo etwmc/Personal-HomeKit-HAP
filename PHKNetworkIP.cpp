@@ -111,7 +111,7 @@ TXTRecordRef buildTXTRecord() {
     sprintf(buf, "%d", currentConfigurationNum);
     TXTRecordSetValue(&txtRecord, "c#", 1, buf);    //Configuration Number
     TXTRecordSetValue(&txtRecord, "s#", 1, "4");    //Number of service
-    TXTRecordSetValue(&txtRecord, "sf", 1, "2");    //No idea what it is
+    TXTRecordSetValue(&txtRecord, "sf", 1, "1");    //No idea what it is
     TXTRecordSetValue(&txtRecord, "ff", 1, "0");    //1 for MFI product
     TXTRecordSetValue(&txtRecord, "md", strlen(deviceName), deviceName);    //Model Name
     return txtRecord;
