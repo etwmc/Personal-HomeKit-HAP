@@ -18,11 +18,12 @@ const char pairingTlv8Type[] = "application/pairing+tlv8";
 inline string wrap(const char *str) { return (string)"\""+str+"\""; }
 inline string attribute(unsigned short type, unsigned short acclaim, int p, bool value) {
     string result;
-
-    result += wrap("value")+":";
-    if (value) result += "true";
-    else result += "false";
-    result += ",";
+    if (p & premission_read) {
+        result += wrap("value")+":";
+        if (value) result += "true";
+        else result += "false";
+        result += ",";
+    }
 
     result += wrap("perms")+":";
     result += "[";
@@ -52,8 +53,10 @@ inline string attribute(unsigned short type, unsigned short acclaim, int p, int 
 
     snprintf(tempStr, 4, "%d", value);
 
-    result += wrap("value")+":"+tempStr;
-    result += ",";
+    if (p & premission_read) {
+        result += wrap("value")+":"+tempStr;
+        result += ",";
+    }
 
     snprintf(tempStr, 4, "%d", minVal);
     if (minVal != INT32_MIN)
@@ -106,8 +109,10 @@ inline string attribute(unsigned short type, unsigned short acclaim, int p, floa
 
     snprintf(tempStr, 4, "%f", value);
 
-    result += wrap("value")+":"+tempStr;
-    result += ",";
+    if (p & premission_read) {
+        result += wrap("value")+":"+tempStr;
+        result += ",";
+    }
 
     snprintf(tempStr, 4, "%f", minVal);
     if (minVal != INT32_MIN)
@@ -158,8 +163,10 @@ inline string attribute(unsigned short type, unsigned short acclaim, int p, stri
     string result;
     char tempStr[4];
 
-    result += wrap("value")+":"+wrap(value.c_str());
-    result += ",";
+    if (p & premission_read) {
+        result += wrap("value")+":"+wrap(value.c_str());
+        result += ",";
+    }
 
     result += wrap("perms")+":";
     result += "[";
