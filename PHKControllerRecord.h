@@ -16,6 +16,8 @@ struct PHKKeyRecord {
     char publicKey[32];
 };
 
+void resetControllerRecord();
+bool hasController();
 void addControllerKey(PHKKeyRecord record);
 bool doControllerKeyExist(PHKKeyRecord record);
 void removeControllerKey(PHKKeyRecord record);

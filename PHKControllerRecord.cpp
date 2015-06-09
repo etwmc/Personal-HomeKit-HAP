@@ -11,6 +11,7 @@
 #include <vector>
 #include <strings.h>
 
+
 #if MCU
 #else
 #include <fstream>
@@ -29,14 +30,16 @@ vector<PHKKeyRecord>readIn() {
     fs.open(controllerRecordsAddress, std::ifstream::in);
 #endif
 
-    char buffer[69];
+    char buffer[70];
+    bzero(buffer, 70);
 
     PHKKeyRecord record;
     vector<PHKKeyRecord> results;
 
 #if MCU
 #else
-    while (fs.is_open()&&fs.good()&&!fs.eof()) {
+    bool isEmpty = fs.peek() == EOF;
+    while (!isEmpty&&fs.is_open()&&fs.good()&&!fs.eof()) {
         fs.get(buffer, 69);
 #endif
         bcopy(buffer, record.controllerID, 36);
@@ -49,6 +52,15 @@ vector<PHKKeyRecord>readIn() {
 #endif
 
     return results;
+}
+
+void resetControllerRecord() {
+    ofstream fs;
+    fs.open(controllerRecordsAddress, std::ofstream::out|std::ofstream::trunc);
+}
+
+bool hasController() {
+    return controllerRecords.size() > 0;
 }
 
 void addControllerKey(PHKKeyRecord record) {

@@ -71,6 +71,10 @@ int setupSocketV4(unsigned int maximumConnection) {
     int _socket = socket(PF_INET, SOCK_STREAM, 0);
     sockaddr_in addr;   bzero(&addr, sizeof(addr));
     addr.sin_addr.s_addr = htonl(INADDR_ANY);   addr.sin_family = PF_INET;    addr.sin_port = htons(portNumber);
+
+    int optval = 1;	socklen_t optlen = sizeof(optval);
+	setsockopt(_socket, SOL_SOCKET, SO_KEEPALIVE, &optval, optlen);
+
     bind(_socket, (const struct sockaddr *)&addr, sizeof(addr));
     listen(_socket, maximumConnection);
     return _socket;
@@ -111,7 +115,9 @@ TXTRecordRef buildTXTRecord() {
     sprintf(buf, "%d", currentConfigurationNum);
     TXTRecordSetValue(&txtRecord, "c#", 1, buf);    //Configuration Number
     TXTRecordSetValue(&txtRecord, "s#", 1, "4");    //Number of service
-    TXTRecordSetValue(&txtRecord, "sf", 1, "1");    //No idea what it is
+    if (hasController()) buf[0] = '0';
+    else buf[0] = '1';
+    TXTRecordSetValue(&txtRecord, "sf", 1, buf);    //Discoverable: 0 if has been paired
     TXTRecordSetValue(&txtRecord, "ff", 1, "0");    //1 for MFI product
     TXTRecordSetValue(&txtRecord, "md", strlen(deviceName), deviceName);    //Model Name
     return txtRecord;
@@ -207,6 +213,7 @@ void *connectionLoop(void *threadInfo) {
 
         do {
             len = read(subSocket, info->buffer, 4096);
+		printf("Return len %d for socket %d\n", len, subSocket);
             PHKNetworkMessage msg(info->buffer);
             if (len > 0) {
                 if (!strcmp(msg.directory, "pair-setup")){
@@ -216,7 +223,8 @@ void *connectionLoop(void *threadInfo) {
                      */
 
                     info->handlePairSeup();
-
+		    
+		    updateConfiguration();
                 }
                 else if (!strcmp(msg.directory, "pair-verify")){
                     info->handlePairVerify();
