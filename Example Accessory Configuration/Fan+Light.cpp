@@ -20,7 +20,7 @@ void initAccessorySet() {
     //Add Light
     accSet = new AccessorySet();
     accSet = &AccessorySet::getInstance();
-    addInfoServiceToAccessory(lightAcc, "Light 1", "ET", "Light", "12345678");
+    addInfoServiceToAccessory(lightAcc, "Light 1", "ET", "Light", "12345678", &lightIdentify);
     accSet->addAccessory(lightAcc);
 
     Service *lightService = new Service(charType_lightBulb);
@@ -40,7 +40,7 @@ void initAccessorySet() {
 
     //Add fan
     Accessory *fan = new Accessory();
-    addInfoServiceToAccessory(fan, "Fan 1", "ET", "Fan", "12345678");
+    addInfoServiceToAccessory(fan, "Fan 1", "ET", "Fan", "12345678", &fanIdentify);
     accSet->addAccessory(fan);
 
     Service *fanService = new Service(charType_fan);
