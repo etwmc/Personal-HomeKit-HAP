@@ -10,6 +10,14 @@
 int lightStength = 0;
 int fanSpeedVal = 0;
 
+void lightIdentify(bool oldValue, bool newValue) {
+    printf("Start Identify Light\n");
+}
+
+void fanIdentify(bool oldValue, bool newValue) {
+    printf("Start Identify Fan\n");
+}
+
 AccessorySet *accSet;
 
 void initAccessorySet() {
@@ -18,7 +26,6 @@ void initAccessorySet() {
     Accessory *lightAcc = new Accessory();
 
     //Add Light
-    accSet = new AccessorySet();
     accSet = &AccessorySet::getInstance();
     addInfoServiceToAccessory(lightAcc, "Light 1", "ET", "Light", "12345678", &lightIdentify);
     accSet->addAccessory(lightAcc);
