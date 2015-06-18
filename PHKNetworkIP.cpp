@@ -64,6 +64,8 @@ const unsigned char accessorySecretKey[32] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF
 int _socket_v4, _socket_v6;
 DNSServiceRef netServiceV4, netServiceV6;
 
+deviceType currentDeviceType = deviceType_other;
+
 int currentConfigurationNum = 1;
 
 //Network Setup
@@ -111,7 +113,7 @@ TXTRecordRef buildTXTRecord() {
     TXTRecordCreate(&txtRecord, 0, NULL);
     TXTRecordSetValue(&txtRecord, "pv", 3, "1.0");  //Version
     TXTRecordSetValue(&txtRecord, "id", 17, deviceIdentity);    //Device id
-    char buf[2];
+    char buf[3];
     sprintf(buf, "%d", currentConfigurationNum);
     TXTRecordSetValue(&txtRecord, "c#", 1, buf);    //Configuration Number
     TXTRecordSetValue(&txtRecord, "s#", 1, "4");    //Number of service
@@ -120,6 +122,8 @@ TXTRecordRef buildTXTRecord() {
     TXTRecordSetValue(&txtRecord, "sf", 1, buf);    //Discoverable: 0 if has been paired
     TXTRecordSetValue(&txtRecord, "ff", 1, "0");    //1 for MFI product
     TXTRecordSetValue(&txtRecord, "md", strlen(deviceName), deviceName);    //Model Name
+    int len = sprintf(buf, "%d", currentDeviceType);
+    TXTRecordSetValue(&txtRecord, "ci", len, buf);    //1 for MFI product
     return txtRecord;
 }
 
@@ -720,12 +724,13 @@ void connectionInfo::handlePairVerify() {
                     } else {
                         PHKNetworkMessageDataRecord error;
                         error.activate = true;
-			error.data = new char[1];
-			error.data[0] = 2;
-			error.index = 7;
-			error.length = 1;
-			response.data.addRecord(error);
-		    }
+                        error.data = new char[1];
+                        error.data[0] = 2;
+                        error.index = 7;
+                        error.length = 1;
+                        response.data.addRecord(error);
+                        printf("Verify failed");
+                    }
 
                     delete [] decryptData;
                 }

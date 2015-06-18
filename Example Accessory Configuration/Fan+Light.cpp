@@ -10,20 +10,29 @@
 int lightStength = 0;
 int fanSpeedVal = 0;
 
+void lightIdentify(bool oldValue, bool newValue) {
+    printf("Start Identify Light\n");
+}
+
+void fanIdentify(bool oldValue, bool newValue) {
+    printf("Start Identify Fan\n");
+}
+
 AccessorySet *accSet;
 
 void initAccessorySet() {
+    currentDeviceType = deviceType_bridge;
+    
     printf("Initial Accessory\n");
 
     Accessory *lightAcc = new Accessory();
 
     //Add Light
-    accSet = new AccessorySet();
     accSet = &AccessorySet::getInstance();
-    addInfoServiceToAccessory(lightAcc, "Light 1", "ET", "Light", "12345678");
+    addInfoServiceToAccessory(lightAcc, "Light 1", "ET", "Light", "12345678", &lightIdentify);
     accSet->addAccessory(lightAcc);
 
-    Service *lightService = new Service(charType_lightBulb);
+    Service *lightService = new Service(serviceType_lightBulb);
     lightAcc->addService(lightService);
 
     stringCharacteristics *lightServiceName = new stringCharacteristics(charType_serviceName, premission_read, 0);
@@ -40,10 +49,10 @@ void initAccessorySet() {
 
     //Add fan
     Accessory *fan = new Accessory();
-    addInfoServiceToAccessory(fan, "Fan 1", "ET", "Fan", "12345678");
+    addInfoServiceToAccessory(fan, "Fan 1", "ET", "Fan", "12345678", &fanIdentify);
     accSet->addAccessory(fan);
 
-    Service *fanService = new Service(charType_fan);
+    Service *fanService = new Service(serviceType_fan);
     fan->addService(fanService);
 
     stringCharacteristics *fanServiceName = new stringCharacteristics(charType_serviceName, premission_read, 0);

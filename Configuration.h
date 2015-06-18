@@ -12,7 +12,7 @@
 
 //Device Setting
 #define deviceName "Night Light"    //Name
-#define deviceIdentity "12:00:54:23:51:13"  //ID
+#define deviceIdentity "12:10:54:23:51:13"  //ID
 #define _manufactuerName "ET Chan"   //Manufactuer
 #define devicePassword "523-12-643" //Password
 #define deviceUUID "9FCF7180-6CAA-4174-ABC0-E3FAE58E3ADD"   //UUID, for pair verify
