@@ -629,10 +629,10 @@ void connectionInfo::handlePairVerify() {
 
                 PHKNetworkMessageDataRecord idRecord;
 		idRecord.activate = true;
-		idRecord.data = new char[strlen(deviceIdentity)];
-		strcpy(idRecord.data, deviceIdentity);
+		idRecord.data = new char[17];
+		bcopy(deviceIdentity, idRecord.data, 17);
 		idRecord.index = 1;
-		idRecord.length = (unsigned int)strlen(deviceIdentity);
+		idRecord.length = (unsigned int)17;
 
                 PHKNetworkMessageDataRecord pubKeyRecord;
 		pubKeyRecord.activate = true;
