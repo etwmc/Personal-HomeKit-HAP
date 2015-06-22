@@ -1,8 +1,10 @@
 LINK = -lssl -lcrypto -ldl -lpthread
-CFLAG = -O0
+CFLAG = -Os -s
 CC = gcc
 CPP = g++
+PHK_LIBNAME=libphk
 ifeq ($(OS),Windows_NT)
+    PHK_LIBFILE=$(PHK_LIBNAME).dll
     ifeq ($(PROCESSOR_ARCHITECTURE),AMD64)
     endif
     ifeq ($(PROCESSOR_ARCHITECTURE),x86)
@@ -11,8 +13,10 @@ else
     UNAME_S := $(shell uname -s)
     ifeq ($(UNAME_S),Linux)
         LINK +=  -ldns_sd
+        PHK_LIBFILE=$(PHK_LIBNAME).so
     endif
     ifeq ($(UNAME_S),Darwin)
+        PHK_LIBFILE=$(PHK_LIBNAME).dylib
     endif
     UNAME_P := $(shell uname -p)
 endif
@@ -20,6 +24,8 @@ OBJFILE = chacha20.o curve25519.o ed25519.o poly1305.o rfc6234-master/hkdf.o rfc
 all: PHK
 PHK: $(OBJFILE)
 	$(CPP) $(CFLAG) -o PHK $(OBJFILE) $(LINK)
+phklib: PHK
+	$(CPP) $(CFLAG) -dynamiclib $(LINK) -o $(PHK_LIBFILE) $(PHK_OBJFILES)
 chacha20.o: Chacha20/chacha20_simple.c Chacha20/chacha20_simple.h
 	$(CC) $(CFLAG) -w -o chacha20.o -c Chacha20/chacha20_simple.c
 curve25519.o: curve25519/curve25519-donna.c curve25519/curve25519-donna.h
@@ -35,4 +41,4 @@ srp/%.o: srp/%.c
 %.o: %.cpp
 	$(CPP) $(CFLAG) -w -c $<
 clean:
-	rm -rf ./*.o Chacha20/*.o curve25519/*.o ed25519-donna/*.o poly1305-opt-master/*.o rfc6234-master/*.o srp/*.o PHK
+	rm -rf *.o Chacha20/*.o curve25519/*.o ed25519-donna/*.o poly1305-opt-master/*.o rfc6234-master/*.o srp/*.o PHK $(PHK_LIBFILE)

@@ -1,3 +1,4 @@
+#pragma once
 //
 //  PHKNetworkIP.h
 //  Workbench
@@ -5,9 +6,6 @@
 //  Created by Wai Man Chan on 4/8/14.
 //
 //
-
-#ifndef __Workbench__PHKNetworkIP__
-#define __Workbench__PHKNetworkIP__
 
 #include <stdio.h>
 #include <sys/socket.h>
@@ -22,6 +20,26 @@ using namespace std;
 
 #define IPv4 1
 #define IPv6 0
+
+typedef enum {
+    deviceType_other = 0,
+    deviceType_bridge = 2,
+    deviceType_fan = 3,
+    deviceType_garageDoorOpener = 4,
+    deviceType_lightBulb = 5,
+    deviceType_doorLock = 6,
+    deviceType_outlet = 7,
+    deviceType_switch = 8,
+    deviceType_thermostat = 9,
+    deviceType_sensor = 10,
+    deviceType_alarmSystem = 11,
+    deviceType_door = 12,
+    deviceType_window = 13,
+    deviceType_windowCover = 14,
+    deviceType_programmableSwitch = 15,
+} deviceType;
+
+extern deviceType currentDeviceType;
 
 typedef enum
 {
@@ -108,24 +126,24 @@ class connectionInfo {
 public:
     pthread_t thread;
     pthread_mutex_t mutex;
-    
+
     bool connected = false;
-    
+
     uint8_t controllerToAccessoryKey[32];
     uint8_t accessoryToControllerKey[32];
     unsigned long long numberOfMsgRec = 0;
     unsigned long long numberOfMsgSend = 0;
     int subSocket = -1;
     char buffer[4096];
-    
+
     void *notificationList[numberOfNotifiableValue];
-    
+
     void handlePairSeup();
     void handlePairVerify();
     void handleAccessoryRequest();
 
     void Poly1305_GenKey(const unsigned char * key, uint8_t * buf, uint16_t len, Poly1305Type_t type, char* verify);
-    
+
     void addNotify(void *target) {
         for (int i = 0; i < numberOfNotifiableValue; i++) {
             if (notificationList[i] == 0) {
@@ -157,5 +175,3 @@ public:
 };
 
 void updateConfiguration();
-
-#endif /* defined(__Workbench__PHKNetworkIP__) */

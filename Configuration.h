@@ -1,3 +1,4 @@
+#pragma once
 //
 //  Configuration.h
 //  Workbench
@@ -6,15 +7,12 @@
 //
 //
 
-#ifndef Workbench_Configuration_h
-#define Workbench_Configuration_h
-
 #define HomeKitLog 1
 #define HomeKitReplyHeaderLog 1
 
 //Device Setting
 #define deviceName "Night Light"    //Name
-#define deviceIdentity "12:00:54:23:51:13"  //ID
+#define deviceIdentity "12:10:54:23:51:13"  //ID
 #define _manufactuerName "ET Chan"   //Manufactuer
 #define devicePassword "523-12-643" //Password
 #define deviceUUID "9FCF7180-6CAA-4174-ABC0-E3FAE58E3ADD"   //UUID, for pair verify
@@ -47,5 +45,3 @@ typedef SHA512_CTX SHACTX;
 #define SHAFinal SHA512_Final
 #define SHA_DIGESTSIZE 64
 #define SHA_BlockSize 128
-
-#endif
