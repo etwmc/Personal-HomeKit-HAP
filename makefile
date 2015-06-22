@@ -1,5 +1,5 @@
 LINK = -lssl -lcrypto -ldl -lpthread
-CFLAG = -O0
+CFLAG = -Os -s
 CC = gcc
 CPP = g++
 PHK_LIBNAME=libphk
