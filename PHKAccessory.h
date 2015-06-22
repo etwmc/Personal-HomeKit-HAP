@@ -94,19 +94,19 @@ typedef enum {
     charType_videoValAttr       = 0x3D,
 
 #pragma - The following is service provide
-    charType_accessoryInfo      = 0x3E,
-    charType_camera             = 0x3F,
-    charType_fan                = 0x40,
-    charType_garageDoorOpener   = 0x41,
-    charType_lightBulb          = 0x43,
-    charType_lockManagement     = 0x44,
-    charType_lockMechanism      = 0x45,
-    charType_microphone         = 0x46,
-    charType_outlet             = 0x47,
-    charType_speaker            = 0x48,
-    charType_switch             = 0x49,
-    charType_thermostat         = 0x4A
-} charType;
+    serviceType_accessoryInfo      = 0x3E,
+    serviceType_camera             = 0x3F,
+    serviceType_fan                = 0x40,
+    serviceType_garageDoorOpener   = 0x41,
+    serviceType_lightBulb          = 0x43,
+    serviceType_lockManagement     = 0x44,
+    serviceType_lockMechanism      = 0x45,
+    serviceType_microphone         = 0x46,
+    serviceType_outlet             = 0x47,
+    serviceType_speaker            = 0x48,
+    serviceType_switch             = 0x49,
+    serviceType_thermostat         = 0x4A
+} serviceType;
 
 enum {
     premission_read = 1,

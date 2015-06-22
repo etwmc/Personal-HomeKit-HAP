@@ -573,7 +573,7 @@ Content-Length: %u\r\n\r\n", protocol, statusCode, returnType, replyDataLen);
 }
 
 void addInfoServiceToAccessory(Accessory *acc, string accName, string manufactuerName, string modelName, string serialNumber, identifyFunction identifyCallback) {
-    Service *infoService = new Service(charType_accessoryInfo);
+    Service *infoService = new Service(serviceType_accessoryInfo);
     acc->addService(infoService);
 
     stringCharacteristics *accNameCha = new stringCharacteristics(charType_serviceName, premission_read, 0);
