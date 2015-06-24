@@ -217,7 +217,12 @@ void *connectionLoop(void *threadInfo) {
 
         do {
             len = read(subSocket, info->buffer, 4096);
-		printf("Return len %d for socket %d\n", len, subSocket);
+            printf("Return len %d for socket %d\n", len, subSocket);
+            
+#if HomeKitLog == 1
+            printf("Message %s\n", info->buffer);
+#endif
+            
             PHKNetworkMessage msg(info->buffer);
             if (len > 0) {
                 if (!strcmp(msg.directory, "pair-setup")){
@@ -844,6 +849,22 @@ PHKNetworkIP::~PHKNetworkIP() {
     DNSServiceRefDeallocate(netServiceV4);
 }
 
+const char *copyLine(const char *rawData, char *destination) {
+    int i;
+    for (i = 0; rawData[i] != '\r' && rawData[i] != 0; i++) {
+        destination[i] = rawData[i];
+    }
+    i++;
+    if (rawData[i] == '\n')
+        return &rawData[i+1];
+    else return &rawData[i];
+}
+
+const char *skipTillChar(const char *ptr, const char target) {
+    for (; (*ptr)!=0&&(*ptr)!=target; ptr++);  ptr++;
+    return ptr;
+}
+
 PHKNetworkMessage::PHKNetworkMessage(const char *rawData) {
     strcpy(method, "POST");
 
@@ -858,15 +879,30 @@ PHKNetworkMessage::PHKNetworkMessage(const char *rawData) {
         directory[i] = (*ptr);
         directory[i+1] = 0;
     }
+    
+    ptr = skipTillChar(ptr, '\n');
+    
+    char buffer[1024];
+    const char *dptr = ptr;
+    for (int i = 0; i < 19; i++) {
+        bzero(buffer, 1024);
+        dptr = copyLine(dptr, buffer);
+        printf("%d: %s\n", i, buffer);
+    }
+    
+    //Reject host
+    if (strncmp(ptr, "Host", 4) == 0) {
+        ptr = skipTillChar(ptr, '\n');
+    }
 
     //Get the length of content
-    //Skip to the content-length
-    for (; (*ptr)!=0&&(*ptr)!=':'; ptr++);  ptr++;
+    //Skip to the content-type
+    ptr = skipTillChar(ptr, ':'); ptr++;
     unsigned int dataSize = (unsigned int)strtol(ptr, (char **)&ptr, 10);
 
     //Get the type of content
     //Skip to the content-length
-    for (; (*ptr)!=0&&(*ptr)!=':'; ptr++);  ptr+=2;
+    ptr = skipTillChar(ptr, ':');  ptr+=2;
     for (int i = 0; (*ptr)!=0 && (*ptr)!='\r'; ptr++, i++) {
         type[i] = (*ptr);
         type[i+1] = 0;
