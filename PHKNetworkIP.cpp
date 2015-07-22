@@ -226,12 +226,8 @@ void *connectionLoop(void *threadInfo) {
             printf("Return len %d for socket %d\n", len, subSocket);
 #endif
             
-#if HomeKitLog == 1
-            printf("Message ");
-            for (int i = 0; i < len; i++) {
-                printf("%02x", info->buffer[i]);
-            }
-            printf("\n");
+#if HomeKitReplyHeaderLog == 1
+            printf("Message: %s\n", info->buffer);
 #endif
             
             PHKNetworkMessage msg(info->buffer);
@@ -830,8 +826,13 @@ void connectionInfo::handleAccessoryRequest() {
             
             chacha20_ctx chacha20;    bzero(&chacha20, sizeof(chacha20));
             
+            printf("send: %llx\n", numberOfMsgRec);
+            numberOfMsgRec = bswap_64(numberOfMsgRec);
+            printf("send: %llx\n", numberOfMsgRec);
             chacha20_setup(&chacha20, (const uint8_t *)controllerToAccessoryKey, 32, (uint8_t *)&numberOfMsgRec);
+            numberOfMsgRec = bswap_64(numberOfMsgRec);
             numberOfMsgRec++;
+            printf("send: %llx\n", numberOfMsgRec);
             
             char temp[64];  bzero(temp, 64); char temp2[64];  bzero(temp2, 64);
             chacha20_encrypt(&chacha20, (const uint8_t*)temp, (uint8_t *)temp2, 64);
@@ -842,8 +843,13 @@ void connectionInfo::handleAccessoryRequest() {
             char verify[16];    bzero(verify, 16);
             Poly1305_GenKey((const unsigned char *)temp2, (uint8_t *)buffer, msgLen, Type_Data_With_Length, verify);
             
+            printf("Request: %s\n", decryptData);
+            
             if(len >= (2 + msgLen + 16)
                && memcmp((void *)verify, (void *)&buffer[2 + msgLen], 16) == 0) {
+#if HomeKitLog == 1
+                printf("Verify successfully!\n");
+#endif
             }
             else {
 #if HomeKitLog == 1
@@ -863,8 +869,11 @@ void connectionInfo::handleAccessoryRequest() {
             reply[0] = resultLen%256;
             reply[1] = (resultLen-(uint8_t)reply[0])/256;
             
+            numberOfMsgSend = bswap_64(numberOfMsgSend);
             chacha20_setup(&chacha20, (const uint8_t *)accessoryToControllerKey, 32, (uint8_t *)&numberOfMsgSend);
+            numberOfMsgSend = bswap_64(numberOfMsgSend);
             numberOfMsgSend++;
+
             chacha20_encrypt(&chacha20, (const uint8_t*)temp, (uint8_t *)temp2, 64);
             chacha20_encrypt(&chacha20, (const uint8_t*)resultData, (uint8_t*)&reply[2], resultLen);
             
