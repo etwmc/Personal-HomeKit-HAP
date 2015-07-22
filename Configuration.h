@@ -9,14 +9,15 @@
 
 #define HomeKitLog 1
 #define HomeKitReplyHeaderLog 1
+#define PowerOnTest 0
 
 //Device Setting
-#define deviceName "Night Light"    //Name
-#define deviceIdentity "12:10:54:23:51:13"  //ID
+#define deviceName "House Light"    //Name
+#define deviceIdentity "12:10:34:23:51:12"  //ID
 #define _manufactuerName "ET Chan"   //Manufactuer
 #define devicePassword "523-12-643" //Password
-#define deviceUUID "9FCF7180-6CAA-4174-ABC0-E3FAE58E3ADD"   //UUID, for pair verify
-#define controllerRecordsAddress "./controller" //Where to store the client keys
+#define deviceUUID "62F47751-8F26-46BF-9552-8F4238E67D60"   //UUID, for pair verify
+#define controllerRecordsAddress "/var/PHK_controller" //Where to store the client keys
 
 //Number of client
 /*
