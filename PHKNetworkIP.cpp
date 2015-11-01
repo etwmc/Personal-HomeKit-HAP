@@ -69,6 +69,16 @@ deviceType currentDeviceType = deviceType_other;
 
 int currentConfigurationNum = 1;
 
+int is_big_endian(void)
+{
+    union {
+        uint32_t i;
+        char c[4];
+    } e = { 0x01000000 };
+
+    return e.c[0];
+}
+
 //Network Setup
 int setupSocketV4(unsigned int maximumConnection) {
     int _socket = socket(PF_INET, SOCK_STREAM, 0);
@@ -827,10 +837,10 @@ void connectionInfo::handleAccessoryRequest() {
             chacha20_ctx chacha20;    bzero(&chacha20, sizeof(chacha20));
             
             printf("send: %llx\n", numberOfMsgRec);
-            numberOfMsgRec = bswap_64(numberOfMsgRec);
+            if (!is_big_endian()) numberOfMsgRec = bswap_64(numberOfMsgRec);
             printf("send: %llx\n", numberOfMsgRec);
             chacha20_setup(&chacha20, (const uint8_t *)controllerToAccessoryKey, 32, (uint8_t *)&numberOfMsgRec);
-            numberOfMsgRec = bswap_64(numberOfMsgRec);
+            if (!is_big_endian()) numberOfMsgRec = bswap_64(numberOfMsgRec);
             numberOfMsgRec++;
             printf("send: %llx\n", numberOfMsgRec);
             
@@ -869,9 +879,9 @@ void connectionInfo::handleAccessoryRequest() {
             reply[0] = resultLen%256;
             reply[1] = (resultLen-(uint8_t)reply[0])/256;
             
-            numberOfMsgSend = bswap_64(numberOfMsgSend);
+            if (!is_big_endian()) numberOfMsgSend = bswap_64(numberOfMsgSend);
             chacha20_setup(&chacha20, (const uint8_t *)accessoryToControllerKey, 32, (uint8_t *)&numberOfMsgSend);
-            numberOfMsgSend = bswap_64(numberOfMsgSend);
+            if (!is_big_endian()) numberOfMsgSend = bswap_64(numberOfMsgSend);
             numberOfMsgSend++;
 
             chacha20_encrypt(&chacha20, (const uint8_t*)temp, (uint8_t *)temp2, 64);
