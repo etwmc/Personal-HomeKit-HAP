@@ -14,8 +14,8 @@ void lightIdentify(bool oldValue, bool newValue) {
     printf("Start Identify Light\n");
 }
 
-void fanIdentify(bool oldValue, bool newValue) {
-    printf("Start Identify Fan\n");
+void changeLightPower(bool oldValue, bool newValue) {
+    printf("New Light Power State\n");
 }
 
 void changeLightIntensity(int oldValue, int newValue) {
@@ -42,7 +42,7 @@ void initAccessorySet() {
 
     boolCharacteristics *powerState = new boolCharacteristics(charType_on, premission_read|premission_write|premission_notify);
     powerState->setValue("true");
-    powerState->valueChangeFunctionCall = &changeLightIntensity;
+    powerState->valueChangeFunctionCall = &changeLightPower;
     lightAcc->addCharacteristics(lightService, powerState);
 
     intCharacteristics *brightnessState = new intCharacteristics(charType_brightness, premission_read|premission_write|premission_notify, 0, 100, 1, unit_percentage);
