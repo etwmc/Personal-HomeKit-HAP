@@ -14,7 +14,18 @@
 #include <errno.h>
 #include <strings.h>
 
-#include <byteswap.h>
+//#include <byteswap.h>
+static inline unsigned short bswap_16(unsigned short x) {
+return (x>>8) | (x<<8);
+}
+
+static inline unsigned int bswap_32(unsigned int x) {
+    return (bswap_16(x&0xffff)<<16) | (bswap_16(x>>16));
+}
+static inline unsigned long long bswap_64(unsigned long long x) {
+    return x;//(((unsigned long long)bswap_32(x&0xffffffffull))<<32) |
+//    (bswap_32(x>>32));
+}
 
 //Security
 extern "C" {
@@ -247,6 +258,9 @@ void *connectionLoop(void *threadInfo) {
                     //When pair-verify done, we handle Accessory Request
                     info->handleAccessoryRequest();
                 }
+                else if (!strcmp(msg.directory, "identify")){
+                    close(subSocket);
+                }
             }
             
         } while (len > 0);
@@ -287,6 +301,7 @@ void PHKNetworkIP::handleConnection() const {
 //Passed-in buf is len and data_buf
 void connectionInfo::Poly1305_GenKey(const unsigned char * key, uint8_t * buf, uint16_t len, Poly1305Type_t type, char* verify)
 {
+    printf("Length: %d\n", buf[0]);
     if (key == NULL || buf == NULL || len < 2 || verify == NULL)
         return;
     
@@ -297,7 +312,8 @@ void connectionInfo::Poly1305_GenKey(const unsigned char * key, uint8_t * buf, u
     bzero(waste, 16);
     
     if (type == Type_Data_With_Length) {
-        poly1305_update(&verifyContext, (const unsigned char *)buf, 2);
+        poly1305_update(&verifyContext, (const unsigned char *)&buf[0], 1);
+        poly1305_update(&verifyContext, (const unsigned char *)&buf[1], 1);
         poly1305_update(&verifyContext, (const unsigned char *)waste, 14);
         
         poly1305_update(&verifyContext, (const unsigned char *)&buf[2], len);
@@ -306,7 +322,8 @@ void connectionInfo::Poly1305_GenKey(const unsigned char * key, uint8_t * buf, u
         poly1305_update(&verifyContext, (const unsigned char *)buf, len);
     }
     
-    poly1305_update(&verifyContext, (const unsigned char *)waste, 16-len%16);
+    if (len%16 > 0)
+        poly1305_update(&verifyContext, (const unsigned char *)waste, 16-(len%16));
     unsigned char _len;
     if (type == Type_Data_With_Length) {
         _len = 2;
@@ -836,14 +853,15 @@ void connectionInfo::handleAccessoryRequest() {
             
             char temp[64];  bzero(temp, 64); char temp2[64];  bzero(temp2, 64);
             chacha20_encrypt(&chacha20, (const uint8_t*)temp, (uint8_t *)temp2, 64);
-            bzero(decryptData, 2048);
-            chacha20_decrypt(&chacha20, (const uint8_t *)&buffer[2], (uint8_t *)decryptData, msgLen);
             
             //Ploy1305 key
             char verify[16];    bzero(verify, 16);
             Poly1305_GenKey((const unsigned char *)temp2, (uint8_t *)buffer, msgLen, Type_Data_With_Length, verify);
             
-            printf("Request: %s\n", decryptData);
+            bzero(decryptData, 2048);
+            chacha20_encrypt(&chacha20, (const uint8_t *)&buffer[2], (uint8_t *)decryptData, msgLen);
+            
+            printf("Request: %s\nPacketLen: %d\n, MessageLen: %d\n", decryptData, len, strlen(decryptData));
             
             if(len >= (2 + msgLen + 16)
                && memcmp((void *)verify, (void *)&buffer[2 + msgLen], 16) == 0) {
@@ -852,8 +870,24 @@ void connectionInfo::handleAccessoryRequest() {
 #endif
             }
             else {
+                
 #if HomeKitLog == 1
                 printf("Passed-in data is no-verified!\n");
+                for (int i = 0; i < 16; i++)
+                    printf("%ud ", verify[i]);
+                printf("\n");
+                for (int i = 0; i < 16; i++)
+                    printf("%ud ", buffer[2 + msgLen+i]);
+                printf("\n");
+                
+                unsigned long long numberOfMsgRec_ = numberOfMsgRec-1;
+                chacha20_setup(&chacha20, (const uint8_t *)controllerToAccessoryKey, 32, (uint8_t *)&numberOfMsgRec_);
+                chacha20_encrypt(&chacha20, (const uint8_t*)temp, (uint8_t *)temp2, 64);
+                Poly1305_GenKey((const unsigned char *)temp, (uint8_t *)buffer, msgLen, Type_Data_With_Length, verify);
+                for (int i = 0; i < 16; i++)
+                    printf("%ud ", verify[i]);
+                printf("\n");
+                
 #endif
                 continue;
             }
