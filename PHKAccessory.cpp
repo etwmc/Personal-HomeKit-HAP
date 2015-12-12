@@ -365,7 +365,7 @@ void handleAccessory(const char *request, unsigned int requestLen, char **reply,
 
     char *replyData = NULL;  unsigned short replyDataLen = 0;
 
-    int statusCode;
+    int statusCode = 0;
 
     const char *protocol = "HTTP/1.1";
     const char *returnType = hapJsonType;
