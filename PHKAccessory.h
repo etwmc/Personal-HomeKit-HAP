@@ -103,7 +103,13 @@ typedef enum {
     
     charType_airParticulateDensity = 0x64,
     charType_airParticulateSize = 0x65,
+    charType_airQuality         = 0x95,
+    charType_carbonDioxideDetected = 0x92,
     charType_carbonMonoxideDetected = 0x69,
+    charType_carbonDioxideLevel = 0x93,
+    charType_carbonMonoxideLevel = 0x90,
+    charType_carbonDioxidePeakLevel = 0x94,
+    charType_carbonMonoxidePeakLevel = 0x91,
     charType_smokeDetected      = 0x76,
     
     charType_alarmCurrentState  = 0x66,
@@ -112,6 +118,7 @@ typedef enum {
     charType_contactSensorState = 0x6A,
     charType_holdPosition       = 0x6F,
     charType_leakDetected       = 0x70,
+    charType_occupancyDetected  = 0x71,
     
     charType_currentAmbientLightLevel = 0x6B,
     charType_currentHorizontalTiltAngle = 0x6C,
@@ -130,8 +137,9 @@ typedef enum {
     charType_sensorJammed       = 0x78,
     charType_sensorLowBattery   = 0x79,
     charType_sensorTampered     = 0x7A,
+    charType_sensorChargingState= 0x8F,
     
-
+    
 #pragma - The following is service provide
     serviceType_accessoryInfo      = 0x3E,
     serviceType_camera             = 0x3F,
@@ -162,6 +170,12 @@ typedef enum {
     serviceType_temperatureSensor  = 0x8A,
     serviceType_window             = 0x8B,
     serviceType_windowCover        = 0x8C,
+    serviceType_airQualitySensor   = 0x8C,
+    serviceType_securityAlarm      = 0x8E,
+    serviceType_charging           = 0x8F,
+    
+    serviceType_battery            = 0x96,
+    serviceType_carbonDioxideSensor= 0x97,
     
 #pragma - The following is for bluetooth characteristic
     btCharType_pairSetup = 0x4C,
@@ -200,7 +214,7 @@ typedef enum {
 
 class characteristics {
 public:
-
+    
     const unsigned short type;
     const int premission;
     int iid;
@@ -378,7 +392,7 @@ private:
 public:
     static AccessorySet& getInstance() {
         static AccessorySet instance;
-
+        
         return instance;
     }
     pthread_mutex_t accessoryMutex;
@@ -419,3 +433,5 @@ typedef void (*identifyFunction)(bool oldValue, bool newValue);
 void addInfoServiceToAccessory(Accessory *acc, string accName, string manufactuerName, string modelName, string serialNumber, identifyFunction identifyCallback);
 
 void handleAccessory(const char *request, unsigned int requestLen, char **reply, unsigned int *replyLen, connectionInfo *sender);
+
+void updateValueFromDeviceEnd(characteristics *c, int aid, int iid, string value);
