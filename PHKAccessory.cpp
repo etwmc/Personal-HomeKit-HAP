@@ -333,7 +333,7 @@ void *announce(void *info) {
 void updateValueFromDeviceEnd(characteristics *c, int aid, int iid, string value) {
     c->setValue(value);
     char *broadcastTemp = new char[1024];
-    snprintf(broadcastTemp, 1024, "{\"characteristics\":[{\"aid\":%d,\"iid\":%d,\"value\":%s}]}", aid, iid, value);
+    snprintf(broadcastTemp, 1024, "{\"characteristics\":[{\"aid\":%d,\"iid\":%d,\"value\":%s}]}", aid, iid, value.c_str());
     broadcastInfo * info = new broadcastInfo;
     info->sender = c;
     info->desc = broadcastTemp;
