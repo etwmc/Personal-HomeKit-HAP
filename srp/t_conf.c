@@ -28,7 +28,7 @@
  */
 
 #include <stdio.h>
-
+#include <stdlib.h>
 #include "t_defines.h"
 #include "t_pwd.h"
 #include "t_read.h"
@@ -610,13 +610,13 @@ t_checkprime(num)
 
 #include "nys_config.h"
 
-static struct t_conf * sysconf = NULL;
+static struct t_conf * sysconf_var = NULL;
 
 static int
 confinit()
 {
-  if(sysconf == NULL) {
-    if((sysconf = t_openconfbyname(DEFAULT_CONF)) == NULL)
+  if(sysconf_var == NULL) {
+    if((sysconf_var = t_openconfbyname(DEFAULT_CONF)) == NULL)
       return -1;
   }
   return 0;
@@ -633,7 +633,7 @@ gettcent
 {
   if(confinit() < 0)
     return NULL;
-  return t_getconfent(sysconf);
+  return t_getconfent(sysconf_var);
 }
 
 #ifdef ENABLE_NSW
@@ -648,7 +648,7 @@ gettcid
 {
   if(confinit() < 0)
     return NULL;
-  return t_getconfbyindex(sysconf, id);
+  return t_getconfbyindex(sysconf_var, id);
 }
 
 #ifdef ENABLE_NSW
@@ -662,7 +662,7 @@ settcent
 {
   if(confinit() < 0)
     return;
-  t_rewindconf(sysconf);
+  t_rewindconf(sysconf_var);
 }
 
 #ifdef ENABLE_NSW
@@ -674,8 +674,8 @@ endtcent
 #endif
 ()
 {
-  if(sysconf != NULL) {
-    t_closeconf(sysconf);
-    sysconf = NULL;
+  if(sysconf_var != NULL) {
+    t_closeconf(sysconf_var);
+    sysconf_var = NULL;
   }
 }
