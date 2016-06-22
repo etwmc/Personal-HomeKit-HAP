@@ -323,7 +323,8 @@ void *announce(void *info) {
     printf("%s\n", reply);
 #endif
     
-    broadcastMessage(sender, reply, len);
+    //broadcastMessage(sender, reply, len);
+
     delete [] reply;
     
     delete [] desc;

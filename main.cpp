@@ -69,7 +69,7 @@ int main(int argc, const char * argv[]) {
     }
 
     initAccessorySet();
-    setupPort();
+    //setupPort();
 
     PHKNetworkIP networkIP;
     do {
