@@ -437,36 +437,66 @@ void handleAccessory(const char *request, unsigned int requestLen, char **reply,
         if (strncmp(method, "GET", 3) == 0) {
             //Read characteristics
             int aid = 0;    int iid = 0;
-            sscanf(path, "/characteristics?id=%d.%d", &aid, &iid);
-            Accessory *a = AccessorySet::getInstance().accessoryAtIndex(aid);
-            if (a != NULL) {
-                characteristics *c = a->characteristicsAtIndex(iid);
-                if (c != NULL) {
-#if HomeKitLog == 1
-                    printf("Ask for one characteristics: %d . %d\n", aid, iid);
-#endif
-                    char c1[3], c2[3];
-                    sprintf(c1, "%d", aid);
-                    sprintf(c2, "%d", iid);
-                    string s[3] = {string(c1), string(c2), c->value()};
-                    string k[3] = {"aid", "iid", "value"};
-                    string result = dictionaryWrap(k, s, 3);
-                    string d = "characteristics";
-                    result = arrayWrap(&result, 1);
-                    result = dictionaryWrap(&d, &result, 1);
-                    
-                    replyDataLen = result.length();
-                    replyData = new char[replyDataLen+1];
-                    replyData[replyDataLen] = 0;
-                    bcopy(result.c_str(), replyData, replyDataLen);
-                    statusCode = 200;
-                } else {
-                    statusCode = 404;
+            
+            char indexBuffer[1000];
+            sscanf(path, "/characteristics?id=%[^\n]", indexBuffer);
+            printf("Get characteristics %s with len %d\n", indexBuffer, strlen(indexBuffer));
+            
+            statusCode = 404;
+            
+            string result = "[";
+            
+            while (strlen(indexBuffer) > 0) {
+                
+                printf("Get characteristics %s with len %d\n", indexBuffer, strlen(indexBuffer));
+                
+                char temp[1000];
+                //Initial the temp
+                temp[0] = 0;
+                sscanf(indexBuffer, "%d.%d%[^\n]", &aid, &iid, temp);
+                printf("Get temp %s with len %d\n", temp, strlen(temp));
+                strncpy(indexBuffer, temp, 1000);
+                printf("Get characteristics %s with len %d\n", indexBuffer, strlen(indexBuffer));
+                //Trim comma
+                if (indexBuffer[0] == ',') {
+                    indexBuffer[0] = '0';
                 }
                 
-            } else {
-                statusCode = 404;
+                Accessory *a = AccessorySet::getInstance().accessoryAtIndex(aid);
+                if (a != NULL) {
+                    characteristics *c = a->characteristicsAtIndex(iid);
+                    if (c != NULL) {
+#if HomeKitLog == 1
+                        printf("Ask for one characteristics: %d . %d\n", aid, iid);
+#endif
+                        char c1[3], c2[3];
+                        sprintf(c1, "%d", aid);
+                        sprintf(c2, "%d", iid);
+                        string s[3] = {string(c1), string(c2), c->value()};
+                        string k[3] = {"aid", "iid", "value"};
+                        if (result.length() != 1) {
+                            result += ",";
+                        }
+                        
+                        string _result = dictionaryWrap(k, s, 3);
+                        result += _result;
+                        
+                    }
+                    
+                }
             }
+            
+            result += "]";
+            
+            string d = "characteristics";
+            result = dictionaryWrap(&d, &result, 1);
+            
+            replyDataLen = result.length();
+            replyData = new char[replyDataLen+1];
+            replyData[replyDataLen] = 0;
+            bcopy(result.c_str(), replyData, replyDataLen);
+            statusCode = 200;
+            
         } else if (strncmp(method, "PUT", 3) == 0) {
             //Change characteristics
             
