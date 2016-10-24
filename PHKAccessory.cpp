@@ -358,9 +358,9 @@ void handleAccessory(const char *request, unsigned int requestLen, char **reply,
         }
     }
     
-    char path[32];
+    char path[1024];
     int i;
-    for (i = 0; i < 32 && request[index] != ' '; i++, index++) {
+    for (i = 0; i < 1024 && request[index] != ' '; i++, index++) {
         path[i] = request[index];
     }
     path[i] = 0;
