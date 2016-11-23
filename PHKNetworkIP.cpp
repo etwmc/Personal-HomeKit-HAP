@@ -9,6 +9,8 @@
 #include "PHKNetworkIP.h"
 #define PHKNetworkServiceType "_hap._tcp"
 
+
+#include <unistd.h>
 #include <iostream>
 #include <fstream>
 #include <errno.h>
@@ -73,8 +75,13 @@ char tempStr[3073];
 
 const unsigned char accessorySecretKey[32] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xC9, 0x0F, 0xDA, 0xA2, 0x21, 0x68, 0xC2, 0x34, 0xC4, 0xC6, 0x62, 0x8B, 0x80, 0xDC, 0x1C, 0xD1, 0x29, 0x02, 0x4E, 0x08, 0x8A, 0x67, 0xCC, 0x74};
 
-int _socket_v4, _socket_v6;
-DNSServiceRef netServiceV4, netServiceV6;
+int _socket_v4;
+DNSServiceRef netServiceV4;
+#ifdef _WIN32
+#else
+int _socket_v6;
+DNSServiceRef netServiceV6;
+#endif
 
 deviceType currentDeviceType = deviceType_other;
 
@@ -97,13 +104,15 @@ int setupSocketV4(unsigned int maximumConnection) {
     addr.sin_addr.s_addr = htonl(INADDR_ANY);   addr.sin_family = PF_INET;    addr.sin_port = htons(portNumber);
     
     int optval = 1;	socklen_t optlen = sizeof(optval);
-    setsockopt(_socket, SOL_SOCKET, SO_KEEPALIVE, &optval, optlen);
+    setsockopt(_socket, SOL_SOCKET, SO_KEEPALIVE, (char*)&optval, optlen);
     
     bind(_socket, (const struct sockaddr *)&addr, sizeof(addr));
     listen(_socket, maximumConnection);
     return _socket;
 }
 
+#ifdef _WIN32
+#else
 int setupSocketV6(unsigned int maximumConnection) {
     int _socket = socket(PF_INET6, SOCK_STREAM, 0);
     sockaddr_in6 addr;   bzero(&addr, sizeof(addr));
@@ -112,6 +121,7 @@ int setupSocketV6(unsigned int maximumConnection) {
     listen(_socket, maximumConnection);
     return _socket;
 }
+#endif
 
 unsigned short getSocketPortNumberV4(int _socket) {
     sockaddr_in addr; socklen_t len = sizeof(addr);
@@ -119,11 +129,14 @@ unsigned short getSocketPortNumberV4(int _socket) {
     return ntohs(addr.sin_port);
 }
 
+#ifdef _WIN32
+#else
 unsigned short getSocketPortNumberV6(int _socket) {
     sockaddr_in6 addr; socklen_t len = sizeof(addr);
     getsockname(_socket, (struct sockaddr *)&addr, &len);
     return ntohs(addr.sin6_port);
 }
+#endif
 
 void registerFail(DNSServiceRef sdRef, DNSRecordRef RecordRef, DNSServiceFlags flags, DNSServiceErrorType errorCode, void *context ) {
 #if HomeKitLog == 1
@@ -227,7 +240,7 @@ void broadcastMessage(void *sender, char *resultData, size_t resultLen) {
             memcpy((unsigned char*)&reply[resultLen+2], verify, 16);
 #endif
             
-            write(socketNumber, reply, resultLen+18);
+            send(socketNumber, reply, resultLen+18,0);
             delete [] reply;
             pthread_mutex_unlock(&connection[i].mutex);
         }
@@ -242,7 +255,7 @@ void *connectionLoop(void *threadInfo) {
 #endif
         
         do {
-            len = read(subSocket, info->buffer, 4096);
+            len = recv(subSocket, info->buffer, 4096,0);
 #if HomeKitLog == 1
             printf("Return len %d for socket %d\n", len, subSocket);
 #endif
@@ -269,13 +282,21 @@ void *connectionLoop(void *threadInfo) {
                     info->handleAccessoryRequest();
                 }
                 else if (!strcmp(msg.directory, "identify")){
-                    close(subSocket);
+#ifdef _WIN32
+					closesocket(subSocket);
+#else
+					close(subSocket);
+#endif
                 }
             }
             
         } while (len > 0);
-        
+
+#ifdef _WIN32
+        ::closesocket(subSocket);
+#else
         close(subSocket);
+#endif
 #if HomeKitLog == 1
         printf("Stop Connect: %d\n", subSocket);
 #endif
@@ -300,7 +321,14 @@ void PHKNetworkIP::handleConnection() const {
         }
     }
     
-    if (index < 0) close(subSocket);
+    if (index < 0)
+	{
+#ifdef _WIN32
+		closesocket(subSocket);
+#else
+		close(subSocket);
+#endif
+	}
     
 }
 
@@ -613,7 +641,7 @@ void connectionInfo::handlePairSeup() {
                 mResponse.data.addRecord(stateRecord);
                 mResponse.getBinaryPtr(&responseBuffer, &responseLen);
                 if (responseBuffer) {
-                    write(subSocket, (const void *)responseBuffer, (size_t)responseLen);
+                    send(subSocket, responseBuffer, (size_t)responseLen,0);
                     delete [] responseBuffer;
                 }
                 
@@ -629,7 +657,7 @@ void connectionInfo::handlePairSeup() {
 #if HomeKitLog == 1
             printf("%s, %d, responseBuffer = %s, responseLen = %d\n", __func__, __LINE__, responseBuffer, responseLen);
 #endif
-            int len = write(subSocket, (const void *)responseBuffer, (size_t)responseLen);
+            int len = send(subSocket, responseBuffer, (size_t)responseLen,0);
             delete [] responseBuffer;
 #if HomeKitLog == 1
             printf("Pair Setup Transfered length %d\n", len);
@@ -640,7 +668,7 @@ void connectionInfo::handlePairSeup() {
 #endif
         }
         
-    } while (read(subSocket, (void *)buffer, 4096) > 0);
+    } while (recv(subSocket, buffer, 4096,0) > 0);
     SRP_free(srp);
 }
 
@@ -818,10 +846,10 @@ void connectionInfo::handlePairVerify() {
         char *repBuffer = 0;  int repLen = 0;
         response.getBinaryPtr(&repBuffer, &repLen);
         if (repBuffer) {
-            write(subSocket, repBuffer, repLen);
+            send(subSocket, repBuffer, repLen,0);
             delete [] repBuffer;
         }
-    } while (!end && read(subSocket, buffer, 4096) > 0);
+    } while (!end && recv(subSocket, buffer, 4096,0) > 0);
     
 }
 
@@ -845,7 +873,7 @@ void connectionInfo::handleAccessoryRequest() {
     
     do {
         bzero(buffer, 4096);
-        len = read(subSocket, buffer, 4096);
+        len = recv(subSocket, buffer, 4096,0);
         
         //FIXME make sure buffer len > (2 + msgLen + 16)??
         if (len > 0) {
@@ -924,7 +952,7 @@ void connectionInfo::handleAccessoryRequest() {
             Poly1305_GenKey((const unsigned char *)temp2, (uint8_t *)reply, resultLen, Type_Data_With_Length, verify);
             memcpy((unsigned char*)&reply[resultLen+2], verify, 16);
             
-            write(subSocket, reply, resultLen+18);
+            send(subSocket, reply, resultLen+18,0);
             
             pthread_mutex_unlock(&mutex);
             
@@ -1036,7 +1064,9 @@ PHKNetworkMessageData & PHKNetworkMessageData::operator=(const PHKNetworkMessage
 }
 
 PHKNetworkMessageData::PHKNetworkMessageData(const char *rawData, unsigned short len) {
-    unsigned short delta = 0;
+	this->count = 0;
+
+	unsigned short delta = 0;
     while (delta < len) {
         int index = recordIndex(rawData[delta+0]);
         if (index < 0) {

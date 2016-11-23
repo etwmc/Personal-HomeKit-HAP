@@ -90,6 +90,13 @@ char *strchr(), *strrchr(), *strtok();
 
 #include <sys/types.h>
 
+#ifdef WIN32
+#include <process.h>
+#include <io.h>
+#define USE_FTIME 1
+#define USE_RENAME 1
+#define NO_FCHMOD 1
+#else
 #if TIME_WITH_SYS_TIME
 #include <sys/time.h>
 #include <time.h>
@@ -121,12 +128,10 @@ char *strchr(), *strrchr(), *strtok();
 #define TERMIO struct sgttyb
 #define USE_SGTTY
 #endif
+#endif /* WIN32 */
 
-#ifdef WIN32
-#define USE_FTIME 1
-#define USE_RENAME 1
-#define NO_FCHMOD 1
-#endif
+
+
 
 #ifdef USE_FTIME
 #include <sys/timeb.h>

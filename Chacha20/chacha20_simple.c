@@ -19,6 +19,12 @@ This implementation is intended to be simple, many optimizations can be performe
 #include <string.h>
 #include "chacha20_simple.h"
 
+#ifdef _WIN32
+	#define INLINE
+#else
+	#define INLINE inline
+#endif
+
 void chacha20_setup(chacha20_ctx *ctx, const uint8_t *key, size_t length, uint8_t nonce[8])
 {
   const char *constants = (length == 32) ? "expand 32-byte k" : "expand 16-byte k";
@@ -123,7 +129,7 @@ void chacha20_encrypt(chacha20_ctx *ctx, const uint8_t *in, uint8_t *out, size_t
   }
 }
 
-void chacha20_decrypt(chacha20_ctx *ctx, const uint8_t *in, uint8_t *out, size_t length)
+void INLINE chacha20_decrypt(chacha20_ctx *ctx, const uint8_t *in, uint8_t *out, size_t length)
 {
   chacha20_encrypt(ctx, in, out, length);
 }

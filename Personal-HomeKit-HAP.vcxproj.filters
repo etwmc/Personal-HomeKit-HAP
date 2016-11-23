@@ -1,0 +1,201 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Chacha20">
+      <UniqueIdentifier>{f6cf986d-69f1-47dc-b0c8-1e6ddbd14868}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="curve25519">
+      <UniqueIdentifier>{bd079260-fcdd-4ac0-a261-86033f0cedb8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ed25519-donna">
+      <UniqueIdentifier>{7bddeea4-8d42-4bda-9889-d3a654eac7ce}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="poly1305-opt-master">
+      <UniqueIdentifier>{bae2b6a2-57ef-4b8d-b5a6-197d87ab0f76}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="rfc6234-master">
+      <UniqueIdentifier>{a842e132-cea7-4d9a-a055-6ff3ebacd4f7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="srp">
+      <UniqueIdentifier>{5146eaa5-edee-463b-98b7-3b5e2a5ef71f}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Chacha20\chacha20_simple.h">
+      <Filter>Chacha20</Filter>
+    </ClInclude>
+    <ClInclude Include="curve25519\curve25519-donna.h">
+      <Filter>curve25519</Filter>
+    </ClInclude>
+    <ClInclude Include="ed25519-donna\ed25519-donna-basepoint-table.h">
+      <Filter>ed25519-donna</Filter>
+    </ClInclude>
+    <ClInclude Include="ed25519-donna\ed25519-donna-batchverify.h">
+      <Filter>ed25519-donna</Filter>
+    </ClInclude>
+    <ClInclude Include="ed25519-donna\ed25519-donna-impl-base.h">
+      <Filter>ed25519-donna</Filter>
+    </ClInclude>
+    <ClInclude Include="ed25519-donna\ed25519-donna-portable.h">
+      <Filter>ed25519-donna</Filter>
+    </ClInclude>
+    <ClInclude Include="ed25519-donna\ed25519-donna-portable-identify.h">
+      <Filter>ed25519-donna</Filter>
+    </ClInclude>
+    <ClInclude Include="ed25519-donna\ed25519-hash.h">
+      <Filter>ed25519-donna</Filter>
+    </ClInclude>
+    <ClInclude Include="ed25519-donna\ed25519-randombytes.h">
+      <Filter>ed25519-donna</Filter>
+    </ClInclude>
+    <ClInclude Include="ed25519-donna\modm-donna-32bit.h">
+      <Filter>ed25519-donna</Filter>
+    </ClInclude>
+    <ClInclude Include="ed25519-donna\curve25519-donna-32bit.h">
+      <Filter>ed25519-donna</Filter>
+    </ClInclude>
+    <ClInclude Include="ed25519-donna\curve25519-donna-helpers.h">
+      <Filter>ed25519-donna</Filter>
+    </ClInclude>
+    <ClInclude Include="ed25519-donna\ed25519.h">
+      <Filter>ed25519-donna</Filter>
+    </ClInclude>
+    <ClInclude Include="ed25519-donna\ed25519-donna.h">
+      <Filter>ed25519-donna</Filter>
+    </ClInclude>
+    <ClInclude Include="ed25519-donna\ed25519-donna-32bit-tables.h">
+      <Filter>ed25519-donna</Filter>
+    </ClInclude>
+    <ClInclude Include="poly1305-opt-master\poly1305.h">
+      <Filter>poly1305-opt-master</Filter>
+    </ClInclude>
+    <ClInclude Include="rfc6234-master\sha.h">
+      <Filter>rfc6234-master</Filter>
+    </ClInclude>
+    <ClInclude Include="rfc6234-master\hkdf.h">
+      <Filter>rfc6234-master</Filter>
+    </ClInclude>
+    <ClInclude Include="srp\getXXent.h">
+      <Filter>srp</Filter>
+    </ClInclude>
+    <ClInclude Include="srp\nss_defs.h">
+      <Filter>srp</Filter>
+    </ClInclude>
+    <ClInclude Include="srp\nsswitch.h">
+      <Filter>srp</Filter>
+    </ClInclude>
+    <ClInclude Include="srp\NTconfig.h">
+      <Filter>srp</Filter>
+    </ClInclude>
+    <ClInclude Include="srp\nys_config.h">
+      <Filter>srp</Filter>
+    </ClInclude>
+    <ClInclude Include="srp\setXXent.h">
+      <Filter>srp</Filter>
+    </ClInclude>
+    <ClInclude Include="srp\srp.h">
+      <Filter>srp</Filter>
+    </ClInclude>
+    <ClInclude Include="srp\srp_aux.h">
+      <Filter>srp</Filter>
+    </ClInclude>
+    <ClInclude Include="srp\t_client.h">
+      <Filter>srp</Filter>
+    </ClInclude>
+    <ClInclude Include="srp\t_defines.h">
+      <Filter>srp</Filter>
+    </ClInclude>
+    <ClInclude Include="srp\t_pwd.h">
+      <Filter>srp</Filter>
+    </ClInclude>
+    <ClInclude Include="srp\t_read.h">
+      <Filter>srp</Filter>
+    </ClInclude>
+    <ClInclude Include="srp\t_server.h">
+      <Filter>srp</Filter>
+    </ClInclude>
+    <ClInclude Include="srp\t_sha.h">
+      <Filter>srp</Filter>
+    </ClInclude>
+    <ClInclude Include="srp\yp_misc.h">
+      <Filter>srp</Filter>
+    </ClInclude>
+    <ClInclude Include="srp\acconfig.h">
+      <Filter>srp</Filter>
+    </ClInclude>
+    <ClInclude Include="srp\config.h">
+      <Filter>srp</Filter>
+    </ClInclude>
+    <ClInclude Include="srp\cstr.h">
+      <Filter>srp</Filter>
+    </ClInclude>
+    <ClInclude Include="srp\endXXent.h">
+      <Filter>srp</Filter>
+    </ClInclude>
+    <ClInclude Include="srp\getXXbyYY.h">
+      <Filter>srp</Filter>
+    </ClInclude>
+    <ClInclude Include="PHKAccessory.h" />
+    <ClInclude Include="PHKNetworkIP.h" />
+    <ClInclude Include="PHKControllerRecord.h" />
+    <ClInclude Include="Accessory.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Chacha20\chacha20_simple.c">
+      <Filter>Chacha20</Filter>
+    </ClCompile>
+    <ClCompile Include="curve25519\curve25519-donna.c">
+      <Filter>curve25519</Filter>
+    </ClCompile>
+    <ClCompile Include="ed25519-donna\ed25519.c">
+      <Filter>ed25519-donna</Filter>
+    </ClCompile>
+    <ClCompile Include="poly1305-opt-master\poly1305.c">
+      <Filter>poly1305-opt-master</Filter>
+    </ClCompile>
+    <ClCompile Include="rfc6234-master\sha.c">
+      <Filter>rfc6234-master</Filter>
+    </ClCompile>
+    <ClCompile Include="rfc6234-master\hkdf.c">
+      <Filter>rfc6234-master</Filter>
+    </ClCompile>
+    <ClCompile Include="rfc6234-master\hmac.c">
+      <Filter>rfc6234-master</Filter>
+    </ClCompile>
+    <ClCompile Include="srp\srp.c">
+      <Filter>srp</Filter>
+    </ClCompile>
+    <ClCompile Include="srp\srp6_server.c">
+      <Filter>srp</Filter>
+    </ClCompile>
+    <ClCompile Include="srp\t_conf.c">
+      <Filter>srp</Filter>
+    </ClCompile>
+    <ClCompile Include="srp\t_conv.c">
+      <Filter>srp</Filter>
+    </ClCompile>
+    <ClCompile Include="srp\t_math.c">
+      <Filter>srp</Filter>
+    </ClCompile>
+    <ClCompile Include="srp\t_misc.c">
+      <Filter>srp</Filter>
+    </ClCompile>
+    <ClCompile Include="srp\t_pw.c">
+      <Filter>srp</Filter>
+    </ClCompile>
+    <ClCompile Include="srp\t_read.c">
+      <Filter>srp</Filter>
+    </ClCompile>
+    <ClCompile Include="srp\t_truerand.c">
+      <Filter>srp</Filter>
+    </ClCompile>
+    <ClCompile Include="srp\cstr.c">
+      <Filter>srp</Filter>
+    </ClCompile>
+    <ClCompile Include="PHKAccessory.cpp" />
+    <ClCompile Include="PHKNetworkIP.cpp" />
+    <ClCompile Include="PHKControllerRecord.cpp" />
+    <ClCompile Include="Accessory.cpp" />
+    <ClCompile Include="main.cpp" />
+  </ItemGroup>
+</Project>

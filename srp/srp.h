@@ -51,8 +51,8 @@ typedef int SRP_RESULT;
 
 /* Set the minimum number of bits acceptable in an SRP modulus */
 #define SRP_DEFAULT_MIN_BITS 512
-_TYPE( SRP_RESULT ) SRP_set_modulus_min_bits P((int minbits));
-_TYPE( int ) SRP_get_modulus_min_bits P((void));
+_TYPE( SRP_RESULT ) SRP_set_modulus_min_bits (int minbits);
+_TYPE( int ) SRP_get_modulus_min_bits (void);
 
 /*
  * Sets the "secret size callback" function.
@@ -61,8 +61,8 @@ _TYPE( int ) SRP_get_modulus_min_bits P((void));
  * The default function always returns 256 bits.
  */
 typedef int (_CDECL * SRP_SECRET_BITS_CB)(int modsize);
-_TYPE( SRP_RESULT ) SRP_set_secret_bits_cb P((SRP_SECRET_BITS_CB cb));
-_TYPE( int ) SRP_get_secret_bits P((int modsize));
+_TYPE( SRP_RESULT ) SRP_set_secret_bits_cb (SRP_SECRET_BITS_CB cb);
+_TYPE( int ) SRP_get_secret_bits (int modsize);
 
 typedef struct srp_st SRP;
 
@@ -97,15 +97,15 @@ struct srp_server_lu_st {
  * called to do lookups.
  */
 _TYPE( SRP_SERVER_LOOKUP * )
-     SRP_SERVER_LOOKUP_new P((SRP_SERVER_LOOKUP_METHOD * meth));
-_TYPE( SRP_RESULT ) SRP_SERVER_LOOKUP_free P((SRP_SERVER_LOOKUP * slu));
-_TYPE( SRP_RESULT ) SRP_SERVER_do_lookup P((SRP_SERVER_LOOKUP * slu,
-					    SRP * srp, cstr * username));
+     SRP_SERVER_LOOKUP_new (SRP_SERVER_LOOKUP_METHOD * meth);
+_TYPE( SRP_RESULT ) SRP_SERVER_LOOKUP_free (SRP_SERVER_LOOKUP * slu);
+_TYPE( SRP_RESULT ) SRP_SERVER_do_lookup (SRP_SERVER_LOOKUP * slu,
+					    SRP * srp, cstr * username);
 
 /*
  * SRP_SERVER_system_lookup supercedes SRP_server_init_user.
  */
-_TYPE( SRP_SERVER_LOOKUP * ) SRP_SERVER_system_lookup P((void));
+_TYPE( SRP_SERVER_LOOKUP * ) SRP_SERVER_system_lookup (void);
 
 /*
  * Client Parameter Verification API
@@ -213,8 +213,8 @@ _TYPE( SRP_RESULT ) SRP_finalize_library();
  * the object operates in.  SRP_free() frees it.
  * (See RFC2945 method definitions below.)
  */
-_TYPE( SRP * )      SRP_new P((SRP_METHOD * meth));
-_TYPE( SRP_RESULT ) SRP_free P((SRP * srp));
+_TYPE( SRP * )      SRP_new (SRP_METHOD * meth);
+_TYPE( SRP_RESULT ) SRP_free (SRP * srp);
 
 /*
  * Use the supplied lookup object to look up user parameters and
@@ -224,16 +224,16 @@ _TYPE( SRP_RESULT ) SRP_free P((SRP * srp));
  * SRP_set_authenticator, since the lookup function handles that
  * internally.
  */
-_TYPE( SRP_RESULT ) SRP_set_server_lookup P((SRP * srp,
-					     SRP_SERVER_LOOKUP * lookup));
+_TYPE( SRP_RESULT ) SRP_set_server_lookup (SRP * srp,
+					     SRP_SERVER_LOOKUP * lookup);
 
 /*
  * Use the supplied callback function to verify parameters
  * (modulus, generator) given to the client.
  */
 _TYPE( SRP_RESULT )
-     SRP_set_client_param_verify_cb P((SRP * srp,
-				       SRP_CLIENT_PARAM_VERIFY_CB cb));
+     SRP_set_client_param_verify_cb (SRP * srp,
+				       SRP_CLIENT_PARAM_VERIFY_CB cb);
 
 /*
  * Both client and server must call both SRP_set_username and
@@ -241,14 +241,14 @@ _TYPE( SRP_RESULT )
  * SRP_set_user_raw is an alternative to SRP_set_username that
  * accepts an arbitrary length-bounded octet string as input.
  */
-_TYPE( SRP_RESULT ) SRP_set_username P((SRP * srp, const char * username));
-_TYPE( SRP_RESULT ) SRP_set_user_raw P((SRP * srp, const unsigned char * user,
-					int userlen));
+_TYPE( SRP_RESULT ) SRP_set_username (SRP * srp, const char * username);
+_TYPE( SRP_RESULT ) SRP_set_user_raw (SRP * srp, const unsigned char * user,
+					int userlen);
 _TYPE( SRP_RESULT )
-     SRP_set_params P((SRP * srp,
+     SRP_set_params (SRP * srp,
 		       const unsigned char * modulus, int modlen,
 		       const unsigned char * generator, int genlen,
-		       const unsigned char * salt, int saltlen));
+		       const unsigned char * salt, int saltlen);
 
 /*
  * On the client, SRP_set_authenticator, SRP_gen_exp, and
@@ -270,13 +270,13 @@ _TYPE( SRP_RESULT )
  * SRP_set_authenticator (since it doesn't know the plaintext password).
  */
 _TYPE( SRP_RESULT )
-     SRP_set_authenticator P((SRP * srp, const unsigned char * a, int alen));
+     SRP_set_authenticator (SRP * srp, const unsigned char * a, int alen);
 _TYPE( SRP_RESULT )
-     SRP_set_auth_password P((SRP * srp, const char * password));
+     SRP_set_auth_password (SRP * srp, const char * password);
 _TYPE( SRP_RESULT )
-     SRP_set_auth_password_raw P((SRP * srp,
+     SRP_set_auth_password_raw (SRP * srp,
 				  const unsigned char * password,
-				  int passlen));
+				  int passlen);
 
 /*
  * SRP_gen_pub generates the random exponential residue to send
@@ -293,21 +293,21 @@ _TYPE( SRP_RESULT )
  * although the big integer value will still be available
  * through srp->pubkey in the SRP struct.
  */
-_TYPE( SRP_RESULT ) SRP_gen_pub P((SRP * srp, cstr ** result));
+_TYPE( SRP_RESULT ) SRP_gen_pub (SRP * srp, cstr ** result);
 /*
  * Append the data to the extra data segment.  Authentication will
  * not succeed unless both sides add precisely the same data in
  * the same order.
  */
-_TYPE( SRP_RESULT ) SRP_add_ex_data P((SRP * srp, const unsigned char * data,
-				       int datalen));
+_TYPE( SRP_RESULT ) SRP_add_ex_data (SRP * srp, const unsigned char * data,
+				       int datalen);
 
 /*
  * SRP_compute_key must be called after the previous three methods.
  */
-_TYPE( SRP_RESULT ) SRP_compute_key P((SRP * srp, cstr ** result,
+_TYPE( SRP_RESULT ) SRP_compute_key (SRP * srp, cstr ** result,
 				       const unsigned char * pubkey,
-				       int pubkeylen));
+				       int pubkeylen);
 
 /*
  * On the client, call SRP_respond first to get the response to send
@@ -317,9 +317,9 @@ _TYPE( SRP_RESULT ) SRP_compute_key P((SRP * srp, cstr ** result,
  *
  * It is an error to call SRP_respond with a NULL pointer.
  */
-_TYPE( SRP_RESULT ) SRP_verify P((SRP * srp,
-				  const unsigned char * proof, int prooflen));
-_TYPE( SRP_RESULT ) SRP_respond P((SRP * srp, cstr ** response));
+_TYPE( SRP_RESULT ) SRP_verify (SRP * srp,
+				  const unsigned char * proof, int prooflen);
+_TYPE( SRP_RESULT ) SRP_respond (SRP * srp, cstr ** response);
 
 /* RFC2945-style SRP authentication */
 
@@ -330,17 +330,17 @@ _TYPE( SRP_RESULT ) SRP_respond P((SRP * srp, cstr ** response));
  * RFC2945-style SRP authentication methods.  Use these like:
  * SRP * srp = SRP_new(SRP_RFC2945_client_method());
  */
-_TYPE( SRP_METHOD * ) SRP_RFC2945_client_method P((void));
-_TYPE( SRP_METHOD * ) SRP_RFC2945_server_method P((void));
+_TYPE( SRP_METHOD * ) SRP_RFC2945_client_method (void);
+_TYPE( SRP_METHOD * ) SRP_RFC2945_server_method (void);
 
 /*
  * SRP-6 and SRP-6a authentication methods.
  * SRP-6a is recommended for better resistance to 2-for-1 attacks.
  */
-_TYPE( SRP_METHOD * ) SRP6_client_method P((void));
-_TYPE( SRP_METHOD * ) SRP6_server_method P((void));
-_TYPE( SRP_METHOD * ) SRP6a_client_method P((void));
-_TYPE( SRP_METHOD * ) SRP6a_server_method P((void));
+_TYPE( SRP_METHOD * ) SRP6_client_method (void);
+_TYPE( SRP_METHOD * ) SRP6_server_method (void);
+_TYPE( SRP_METHOD * ) SRP6a_client_method (void);
+_TYPE( SRP_METHOD * ) SRP6a_server_method (void);
 
 /*
  * Convenience function - SRP_server_init_user
@@ -351,12 +351,12 @@ _TYPE( SRP_METHOD * ) SRP6a_server_method P((void));
  * This is deprecated in favor of SRP_SERVER_system_lookup() and
  * the Server Lookup API.
  */
-_TYPE( SRP_RESULT ) SRP_server_init_user P((SRP * srp, const char * username));
+_TYPE( SRP_RESULT ) SRP_server_init_user (SRP * srp, const char * username);
 
 /*
  * Use the named engine for acceleration.
  */
-_TYPE( SRP_RESULT ) SRP_use_engine P((const char * engine));
+_TYPE( SRP_RESULT ) SRP_use_engine (const char * engine);
 
 #ifdef __cplusplus
 }

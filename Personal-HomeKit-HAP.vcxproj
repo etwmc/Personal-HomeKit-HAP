@@ -1,0 +1,140 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{89C81753-1AFE-4F3C-B0FB-159F9BC02693}</ProjectGuid>
+    <RootNamespace>PersonalHomeKitHAP</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <IncludePath>$(VCInstallDir)include;$(VCInstallDir)atlmfc\include;$(WindowsSdkDir)include;$(FrameworkSDKDir)\include</IncludePath>
+    <LibraryPath>$(SolutionDir)$(Configuration)\;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>HomeKitLog=1;OPENSSL_ENGINE;_CRT_SECURE_NO_DEPRECATE;STDC_HEADERS;WIN32;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\openssl\include;windows_support_include;$(BONJOUR_SDK_HOME)/Include</AdditionalIncludeDirectories>
+      <DisableSpecificWarnings>4996</DisableSpecificWarnings>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>openssl.lib;$(BONJOUR_SDK_HOME)/Lib/$(PlatformName)/dnssd.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClInclude Include="Accessory.h" />
+    <ClInclude Include="Chacha20\chacha20_simple.h" />
+    <ClInclude Include="curve25519\curve25519-donna.h" />
+    <ClInclude Include="ed25519-donna\curve25519-donna-32bit.h" />
+    <ClInclude Include="ed25519-donna\curve25519-donna-helpers.h" />
+    <ClInclude Include="ed25519-donna\ed25519-donna-32bit-tables.h" />
+    <ClInclude Include="ed25519-donna\ed25519-donna-basepoint-table.h" />
+    <ClInclude Include="ed25519-donna\ed25519-donna-batchverify.h" />
+    <ClInclude Include="ed25519-donna\ed25519-donna-impl-base.h" />
+    <ClInclude Include="ed25519-donna\ed25519-donna-portable-identify.h" />
+    <ClInclude Include="ed25519-donna\ed25519-donna-portable.h" />
+    <ClInclude Include="ed25519-donna\ed25519-donna.h" />
+    <ClInclude Include="ed25519-donna\ed25519-hash.h" />
+    <ClInclude Include="ed25519-donna\ed25519-randombytes.h" />
+    <ClInclude Include="ed25519-donna\ed25519.h" />
+    <ClInclude Include="ed25519-donna\modm-donna-32bit.h" />
+    <ClInclude Include="PHKAccessory.h" />
+    <ClInclude Include="PHKControllerRecord.h" />
+    <ClInclude Include="PHKNetworkIP.h" />
+    <ClInclude Include="poly1305-opt-master\poly1305.h" />
+    <ClInclude Include="rfc6234-master\hkdf.h" />
+    <ClInclude Include="rfc6234-master\sha.h" />
+    <ClInclude Include="srp\acconfig.h" />
+    <ClInclude Include="srp\config.h" />
+    <ClInclude Include="srp\cstr.h" />
+    <ClInclude Include="srp\endXXent.h" />
+    <ClInclude Include="srp\getXXbyYY.h" />
+    <ClInclude Include="srp\getXXent.h" />
+    <ClInclude Include="srp\nsswitch.h" />
+    <ClInclude Include="srp\nss_defs.h" />
+    <ClInclude Include="srp\NTconfig.h" />
+    <ClInclude Include="srp\nys_config.h" />
+    <ClInclude Include="srp\setXXent.h" />
+    <ClInclude Include="srp\srp.h" />
+    <ClInclude Include="srp\srp_aux.h" />
+    <ClInclude Include="srp\t_client.h" />
+    <ClInclude Include="srp\t_defines.h" />
+    <ClInclude Include="srp\t_pwd.h" />
+    <ClInclude Include="srp\t_read.h" />
+    <ClInclude Include="srp\t_server.h" />
+    <ClInclude Include="srp\t_sha.h" />
+    <ClInclude Include="srp\yp_misc.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Accessory.cpp" />
+    <ClCompile Include="Chacha20\chacha20_simple.c" />
+    <ClCompile Include="curve25519\curve25519-donna.c" />
+    <ClCompile Include="ed25519-donna\ed25519.c" />
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="PHKAccessory.cpp" />
+    <ClCompile Include="PHKControllerRecord.cpp" />
+    <ClCompile Include="PHKNetworkIP.cpp" />
+    <ClCompile Include="poly1305-opt-master\poly1305.c" />
+    <ClCompile Include="rfc6234-master\hkdf.c" />
+    <ClCompile Include="rfc6234-master\hmac.c" />
+    <ClCompile Include="rfc6234-master\sha.c" />
+    <ClCompile Include="srp\cstr.c" />
+    <ClCompile Include="srp\srp.c" />
+    <ClCompile Include="srp\srp6_server.c" />
+    <ClCompile Include="srp\t_conf.c" />
+    <ClCompile Include="srp\t_conv.c" />
+    <ClCompile Include="srp\t_math.c" />
+    <ClCompile Include="srp\t_misc.c" />
+    <ClCompile Include="srp\t_pw.c" />
+    <ClCompile Include="srp\t_read.c" />
+    <ClCompile Include="srp\t_truerand.c" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

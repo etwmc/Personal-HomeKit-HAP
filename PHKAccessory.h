@@ -93,7 +93,7 @@ typedef enum {
     charType_videoRotation      = 0x3C,
     charType_videoValAttr       = 0x3D,
     
-#pragma - The following is only default by the device after iOS 9
+//#pragma - The following is only default by the device after iOS 9
     
     charType_firmwareRevision   = 0x52,
     charType_hardwareRevision   = 0x53,
@@ -140,7 +140,7 @@ typedef enum {
     charType_sensorChargingState= 0x8F,
     
     
-#pragma - The following is service provide
+//#pragma - The following is service provide
     serviceType_accessoryInfo      = 0x3E,
     serviceType_camera             = 0x3F,
     serviceType_fan                = 0x40,
@@ -177,13 +177,13 @@ typedef enum {
     serviceType_battery            = 0x96,
     serviceType_carbonDioxideSensor= 0x97,
     
-#pragma - The following is for bluetooth characteristic
+//#pragma - The following is for bluetooth characteristic
     btCharType_pairSetup = 0x4C,
     btCharType_pairVerify = 0x4E,
     btCharType_pairingFeature = 0x4F,
     btCharType_pairings = 0x50,
     btCharType_serviceInstanceID = 0x51,
-#pragma - The following is for bluetooth service
+//#pragma - The following is for bluetooth service
     btServiceType_accessoryInformation = 0xFED3,
     btServiceType_camera            = 0xFEC9,
     btServiceType_fan               = 0xFECB,
@@ -230,8 +230,12 @@ public:
 class boolCharacteristics: public characteristics {
 public:
     bool _value;
-    void (*valueChangeFunctionCall)(bool oldValue, bool newValue) = NULL;
-    boolCharacteristics(unsigned short _type, int _premission): characteristics(_type, _premission) {}
+    void (*valueChangeFunctionCall)(bool oldValue, bool newValue);
+    boolCharacteristics(unsigned short _type, int _premission)
+		: valueChangeFunctionCall(NULL)
+		, characteristics(_type, _premission) 
+	{
+	}
     virtual string value() {
         if (_value)
             return "1";
@@ -251,15 +255,23 @@ public:
     float _value;
     const float _minVal, _maxVal, _step;
     const unit _unit;
-    void (*valueChangeFunctionCall)(float oldValue, float newValue) = NULL;
-    floatCharacteristics(unsigned short _type, int _premission, float minVal, float maxVal, float step, unit charUnit): characteristics(_type, _premission), _minVal(minVal), _maxVal(maxVal), _step(step), _unit(charUnit) {}
+    void (*valueChangeFunctionCall)(float oldValue, float newValue);
+    floatCharacteristics(unsigned short _type, int _premission, float minVal, float maxVal, float step, unit charUnit)
+		: valueChangeFunctionCall(NULL)
+		,characteristics(_type, _premission)
+		, _minVal(minVal)
+		, _maxVal(maxVal)
+		, _step(step)
+		, _unit(charUnit) 
+	{
+	}
     virtual string value() {
         char temp[16];
         snprintf(temp, 16, "%f", _value);
         return temp;
     }
     virtual void setValue(string str) {
-        float temp = atof(str.c_str());
+        float temp = (float) atof(str.c_str());
         if (temp == temp) {
             if (valueChangeFunctionCall)
                 valueChangeFunctionCall(_value, temp);
@@ -274,9 +286,16 @@ public:
     int _value;
     const int _minVal, _maxVal, _step;
     const unit _unit;
-    void (*valueChangeFunctionCall)(int oldValue, int newValue) = NULL;
-    intCharacteristics(unsigned short _type, int _premission, int minVal, int maxVal, int step, unit charUnit): characteristics(_type, _premission), _minVal(minVal), _maxVal(maxVal), _step(step), _unit(charUnit) {
-        _value = minVal;
+    void (*valueChangeFunctionCall)(int oldValue, int newValue);
+    intCharacteristics(unsigned short _type, int _premission, int minVal, int maxVal, int step, unit charUnit)
+		: valueChangeFunctionCall(NULL)
+		, characteristics(_type, _premission)
+		, _minVal(minVal)
+		, _maxVal(maxVal)
+		, _step(step)
+		, _unit(charUnit) 
+	{
+		_value = minVal;
     }
     virtual string value() {
         char temp[16];
@@ -284,11 +303,11 @@ public:
         return temp;
     }
     virtual void setValue(string str) {
-        float temp = atoi(str.c_str());
+        float temp = (float)atoi(str.c_str());
         if (temp == temp) {
             if (valueChangeFunctionCall)
-                valueChangeFunctionCall(_value, temp);
-            _value = temp;
+                valueChangeFunctionCall(_value, (int)temp);
+            _value = (int) temp;
         }
     }
     virtual string describe();
@@ -298,8 +317,13 @@ class stringCharacteristics: public characteristics {
 public:
     string _value;
     const unsigned short maxLen;
-    void (*valueChangeFunctionCall)(string oldValue, string newValue) = NULL;
-    stringCharacteristics(unsigned short _type, int _premission, unsigned short _maxLen): characteristics(_type, _premission), maxLen(_maxLen) {}
+    void (*valueChangeFunctionCall)(string oldValue, string newValue);
+    stringCharacteristics(unsigned short _type, int _premission, unsigned short _maxLen)
+		: valueChangeFunctionCall(NULL)
+		, characteristics(_type, _premission)
+		, maxLen(_maxLen)
+	{
+	}
     virtual string value() {
         return "\""+_value+"\"";
     }
@@ -324,7 +348,7 @@ public:
 
 class Accessory {
 public:
-    int numberOfInstance = 0;
+    int numberOfInstance;
     int aid;
     vector<Service *>_services;
     void addService(Service *ser) {
@@ -357,7 +381,9 @@ public:
         }
         return exist;
     }
-    Accessory() {}
+    Accessory() : numberOfInstance (0)
+	{
+	}
     short numberOfService() { return _services.size(); }
     Service *serviceAtIndex(int index) {
         for (vector<Service *>::iterator it = _services.begin(); it != _services.end(); it++) {
@@ -383,8 +409,9 @@ public:
 class AccessorySet {
 private:
     vector<Accessory *> _accessories;
-    int _aid = 0;
+    int _aid;
     AccessorySet() {
+		_aid = 0;
         pthread_mutex_init(&accessoryMutex, NULL);
     }
     AccessorySet(AccessorySet const&);
