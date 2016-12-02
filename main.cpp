@@ -69,10 +69,14 @@ int main(int argc, const char * argv[]) {
     }
 
     initAccessorySet();
+<<<<<<< HEAD
 #ifdef _WIN32
 #else
 	setupPort();
 #endif
+=======
+    //setupPort();
+>>>>>>> 55d7c8dff12d9e9e3294ac62d5dd0ad68ea3dd16
 
 	PHKNetworkIP networkIP(deviceName,devicePassword,deviceIdentity,controllerRecordsAddress);
     do {

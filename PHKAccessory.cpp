@@ -338,7 +338,8 @@ void *announce(void *info) {
     broadcastInfo *_info = (broadcastInfo *)info;
     void *sender = _info->sender;
     char *desc = _info->desc;
-  
+
+	
 	vector<char> reply_vec(1024);
     char *reply = &reply_vec[0];
     int len = snprintf(reply, 1024, "EVENT/1.0 200 OK\r\nContent-Type: application/hap+json\r\nContent-Length: %lu\r\n\r\n%s", strlen(desc), desc);
@@ -347,8 +348,13 @@ void *announce(void *info) {
     g_homekit_logger("%s\n", reply);
 #endif
     
-    broadcastMessage(sender, reply, len);
-    
+	//Use the /identify message.
+	// /Identify - -> write 204 (subSocket)
+	//I will use the fix of zyanlu. Thank you.
+	//
+	//broadcastMessage(sender, reply, len);
+	//
+
     delete [] desc;
     delete [] info;
 

@@ -87,6 +87,17 @@ deviceType currentDeviceType = deviceType_other;
 
 static int g_currentConfigurationNum = 1;
 
+void write204(int sock) {
+    char *reply = new char[1024];
+    int len =
+            snprintf(reply, 1024,
+                    "HTTP/1.1 204 No Content\r\nContent-Type: application/hap+json\r\nContent-Length: 0\r\n\r\n");
+
+    write(sock, reply, len);
+    delete[] reply;
+
+}
+
 int is_big_endian(void)
 {
     union {
@@ -293,6 +304,7 @@ void *connectionLoop(void *threadInfo) {
                     info->handleAccessoryRequest();
                 }
                 else if (!strcmp(msg.directory, "identify")){
+                    write204(subSocket);
 #ifdef _WIN32
 					closesocket(subSocket);
 #else
