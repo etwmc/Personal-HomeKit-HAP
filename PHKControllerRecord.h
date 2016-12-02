@@ -16,9 +16,30 @@ struct PHKKeyRecord {
     char publicKey[32];
 };
 
-void resetControllerRecord();
-bool hasController();
-void addControllerKey(PHKKeyRecord record);
-bool doControllerKeyExist(PHKKeyRecord record);
-void removeControllerKey(PHKKeyRecord record);
-PHKKeyRecord getControllerKey(char key[32]);
+class ControllerRecord
+{
+	string storeFilePath;
+	vector<PHKKeyRecord> controllerRecords;
+
+	void storeFiles();
+	void loadController() ;
+public:
+	ControllerRecord() 
+	{
+	}
+	virtual ~ControllerRecord()
+	{
+	}
+	void create(const std::string& storeFilePath)
+	{
+		this->storeFilePath = storeFilePath;
+		loadController();
+	}
+
+	void resetController() ;
+	bool hasController() ;
+	void addControllerKey(PHKKeyRecord record) ;
+	bool doControllerKeyExist(PHKKeyRecord record) ;
+	void removeControllerKey(PHKKeyRecord record) ;
+	PHKKeyRecord getControllerKey(char key[32]) ;
+};

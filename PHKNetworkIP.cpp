@@ -61,31 +61,31 @@ using namespace std;
 
 #define portNumber 0
 
-#if MCU
-#else
 connectionInfo connection[numberOfClient];
-#endif
 
 const unsigned char modulusStr[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xC9, 0x0F, 0xDA, 0xA2, 0x21, 0x68, 0xC2, 0x34, 0xC4, 0xC6, 0x62, 0x8B, 0x80, 0xDC, 0x1C, 0xD1, 0x29, 0x02, 0x4E, 0x08, 0x8A, 0x67, 0xCC, 0x74, 0x02, 0x0B, 0xBE, 0xA6, 0x3B, 0x13, 0x9B, 0x22, 0x51, 0x4A, 0x08, 0x79, 0x8E, 0x34, 0x04, 0xDD, 0xEF, 0x95, 0x19, 0xB3, 0xCD, 0x3A, 0x43, 0x1B, 0x30, 0x2B, 0x0A, 0x6D, 0xF2, 0x5F, 0x14, 0x37, 0x4F, 0xE1, 0x35, 0x6D, 0x6D, 0x51, 0xC2, 0x45, 0xE4, 0x85, 0xB5, 0x76, 0x62, 0x5E, 0x7E, 0xC6, 0xF4, 0x4C, 0x42, 0xE9, 0xA6, 0x37, 0xED, 0x6B, 0x0B, 0xFF, 0x5C, 0xB6, 0xF4, 0x06, 0xB7, 0xED, 0xEE, 0x38, 0x6B, 0xFB, 0x5A, 0x89, 0x9F, 0xA5, 0xAE, 0x9F, 0x24, 0x11, 0x7C, 0x4B, 0x1F, 0xE6, 0x49, 0x28, 0x66, 0x51, 0xEC, 0xE4, 0x5B, 0x3D, 0xC2, 0x00, 0x7C, 0xB8, 0xA1, 0x63, 0xBF, 0x05, 0x98, 0xDA, 0x48, 0x36, 0x1C, 0x55, 0xD3, 0x9A, 0x69, 0x16, 0x3F, 0xA8, 0xFD, 0x24, 0xCF, 0x5F, 0x83, 0x65, 0x5D, 0x23, 0xDC, 0xA3, 0xAD, 0x96, 0x1C, 0x62, 0xF3, 0x56, 0x20, 0x85, 0x52, 0xBB, 0x9E, 0xD5, 0x29, 0x07, 0x70, 0x96, 0x96, 0x6D, 0x67, 0x0C, 0x35, 0x4E, 0x4A, 0xBC, 0x98, 0x04, 0xF1, 0x74, 0x6C, 0x08, 0xCA, 0x18, 0x21, 0x7C, 0x32, 0x90, 0x5E, 0x46, 0x2E, 0x36, 0xCE, 0x3B, 0xE3, 0x9E, 0x77, 0x2C, 0x18, 0x0E, 0x86, 0x03, 0x9B, 0x27, 0x83, 0xA2, 0xEC, 0x07, 0xA2, 0x8F, 0xB5, 0xC5, 0x5D, 0xF0, 0x6F, 0x4C, 0x52, 0xC9, 0xDE, 0x2B, 0xCB, 0xF6, 0x95, 0x58, 0x17, 0x18, 0x39, 0x95, 0x49, 0x7C, 0xEA, 0x95, 0x6A, 0xE5, 0x15, 0xD2, 0x26, 0x18, 0x98, 0xFA, 0x05, 0x10, 0x15, 0x72, 0x8E, 0x5A, 0x8A, 0xAA, 0xC4, 0x2D, 0xAD, 0x33, 0x17, 0x0D, 0x04, 0x50, 0x7A, 0x33, 0xA8, 0x55, 0x21, 0xAB, 0xDF, 0x1C, 0xBA, 0x64, 0xEC, 0xFB, 0x85, 0x04, 0x58, 0xDB, 0xEF, 0x0A, 0x8A, 0xEA, 0x71, 0x57, 0x5D, 0x06, 0x0C, 0x7D, 0xB3, 0x97, 0x0F, 0x85, 0xA6, 0xE1, 0xE4, 0xC7, 0xAB, 0xF5, 0xAE, 0x8C, 0xDB, 0x09, 0x33, 0xD7, 0x1E, 0x8C, 0x94, 0xE0, 0x4A, 0x25, 0x61, 0x9D, 0xCE, 0xE3, 0xD2, 0x26, 0x1A, 0xD2, 0xEE, 0x6B, 0xF1, 0x2F, 0xFA, 0x06, 0xD9, 0x8A, 0x08, 0x64, 0xD8, 0x76, 0x02, 0x73, 0x3E, 0xC8, 0x6A, 0x64, 0x52, 0x1F, 0x2B, 0x18, 0x17, 0x7B, 0x20, 0x0C, 0xBB, 0xE1, 0x17, 0x57, 0x7A, 0x61, 0x5D, 0x6C, 0x77, 0x09, 0x88, 0xC0, 0xBA, 0xD9, 0x46, 0xE2, 0x08, 0xE2, 0x4F, 0xA0, 0x74, 0xE5, 0xAB, 0x31, 0x43, 0xDB, 0x5B, 0xFC, 0xE0, 0xFD, 0x10, 0x8E, 0x4B, 0x82, 0xD1, 0x20, 0xA9, 0x3A, 0xD2, 0xCA, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
 
 const unsigned char curveBasePoint[] = { 0x09, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 
 const unsigned char generator[] = {0x05};
-char tempStr[3073];
 
 const unsigned char accessorySecretKey[32] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xC9, 0x0F, 0xDA, 0xA2, 0x21, 0x68, 0xC2, 0x34, 0xC4, 0xC6, 0x62, 0x8B, 0x80, 0xDC, 0x1C, 0xD1, 0x29, 0x02, 0x4E, 0x08, 0x8A, 0x67, 0xCC, 0x74};
 
-int _socket_v4;
-DNSServiceRef netServiceV4;
+static std::string g_DeviceName;
+static std::string g_PinCode;
+static std::string g_DeviceIdentity;
+
+static int _socket_v4 = -1;
+static DNSServiceRef netServiceV4;
 #ifdef _WIN32
 #else
-int _socket_v6;
-DNSServiceRef netServiceV6;
+static int _socket_v6 = -1;
+static DNSServiceRef netServiceV6;
 #endif
 
 deviceType currentDeviceType = deviceType_other;
 
-int currentConfigurationNum = 1;
+static int g_currentConfigurationNum = 1;
 
 int is_big_endian(void)
 {
@@ -108,7 +108,8 @@ int setupSocketV4(unsigned int maximumConnection) {
     
     bind(_socket, (const struct sockaddr *)&addr, sizeof(addr));
     listen(_socket, maximumConnection);
-    return _socket;
+
+	return _socket;
 }
 
 #ifdef _WIN32
@@ -140,7 +141,7 @@ unsigned short getSocketPortNumberV6(int _socket) {
 
 void registerFail(DNSServiceRef sdRef, DNSRecordRef RecordRef, DNSServiceFlags flags, DNSServiceErrorType errorCode, void *context ) {
 #if HomeKitLog == 1
-    printf("Service can't register\n");
+    g_homekit_logger("Service can't register\n");
 #endif
     exit(0);
 }
@@ -149,23 +150,27 @@ TXTRecordRef buildTXTRecord() {
     TXTRecordRef txtRecord;
     TXTRecordCreate(&txtRecord, 0, NULL);
     TXTRecordSetValue(&txtRecord, "pv", 3, "1.0");  //Version
-    TXTRecordSetValue(&txtRecord, "id", 17, deviceIdentity);    //Device id
-    char buf[3];
-    sprintf(buf, "%d", currentConfigurationNum);
-    TXTRecordSetValue(&txtRecord, "c#", 1, buf);    //Configuration Number
-    TXTRecordSetValue(&txtRecord, "s#", 1, "4");    //Number of service
-    if (hasController()) buf[0] = '0';
+    TXTRecordSetValue(&txtRecord, "id", 17, g_DeviceIdentity.c_str() );    //Device id
+
+	char buf[10];
+    snprintf(buf,10, "%d", g_currentConfigurationNum);
+    TXTRecordSetValue(&txtRecord, "c#", strlen(buf), buf);    //Configuration Number
+    TXTRecordSetValue(&txtRecord, "s#", 1, "1");    //Number of service
+
+	if (AccessorySet::getInstance().Controllers.hasController()) buf[0] = '0';
     else buf[0] = '1';
     TXTRecordSetValue(&txtRecord, "sf", 1, buf);    //Discoverable: 0 if has been paired
-    TXTRecordSetValue(&txtRecord, "ff", 1, "0");    //1 for MFI product
-    TXTRecordSetValue(&txtRecord, "md", strlen(deviceName), deviceName);    //Model Name
-    int len = sprintf(buf, "%d", currentDeviceType);
+
+	TXTRecordSetValue(&txtRecord, "ff", 1, "0");    //1 for MFI product
+    TXTRecordSetValue(&txtRecord, "md", g_DeviceName.size(), g_DeviceName.c_str() );    //Model Name
+
+	int len = sprintf(buf, "%d", currentDeviceType);
     TXTRecordSetValue(&txtRecord, "ci", len, buf);    //1 for MFI product
     return txtRecord;
 }
 
 void updateConfiguration() {
-    currentConfigurationNum++;
+    g_currentConfigurationNum++;
     TXTRecordRef txtRecord = buildTXTRecord();
     DNSServiceUpdateRecord(netServiceV4, NULL, 0, TXTRecordGetLength(&txtRecord), TXTRecordGetBytesPtr(&txtRecord), 0);
     TXTRecordDeallocate(&txtRecord);
@@ -174,16 +179,24 @@ void updateConfiguration() {
 void PHKNetworkIP::setupSocket() {
     TXTRecordRef txtRecord = buildTXTRecord();
     _socket_v4 = setupSocketV4(5);
-    DNSServiceRegister(&netServiceV4, 0, 0, deviceName, PHKNetworkServiceType, "", NULL, htons(getSocketPortNumberV4(_socket_v4)), TXTRecordGetLength(&txtRecord), TXTRecordGetBytesPtr(&txtRecord), NULL, NULL);
-    TXTRecordDeallocate(&txtRecord);
+
+    DNSServiceRegister(&netServiceV4, 0, 0, g_DeviceName.c_str() , PHKNetworkServiceType, "", NULL, htons(getSocketPortNumberV4(_socket_v4)), TXTRecordGetLength(&txtRecord), TXTRecordGetBytesPtr(&txtRecord), NULL, NULL);
+	
+	TXTRecordDeallocate(&txtRecord);
 }
 
-PHKNetworkIP::PHKNetworkIP() {
-    SRP_initialize_library();
-    srand((unsigned int)time(NULL));
-    for (int i = 0; i < numberOfClient; i++) {
-        connection[i].subSocket = -1;
-    }
+PHKNetworkIP::PHKNetworkIP(const string& name,const string& pinCode,const string& identity,const string& controllerRecordsPath) {
+    g_DeviceName = name;
+	g_PinCode = pinCode;
+    g_DeviceIdentity = identity;
+	AccessorySet::getInstance().Controllers.create(controllerRecordsPath);
+
+	for(int i = 0 ; i < numberOfClient; i++ )
+	{
+		connection[i].init();
+	}
+	SRP_initialize_library();
+
     setupSocket();
 }
 
@@ -191,7 +204,7 @@ PHKNetworkIP::PHKNetworkIP() {
 void broadcastMessage(void *sender, char *resultData, size_t resultLen) {
     
 #if HomeKitLog == 1
-    printf("Broadcast with sender\n");
+    g_homekit_logger("Broadcast with sender\n");
 #endif
     
     for (int i = 0; i < numberOfClient; i++) {
@@ -200,11 +213,12 @@ void broadcastMessage(void *sender, char *resultData, size_t resultLen) {
             
             pthread_mutex_lock(&connection[i].mutex);
             
-            chacha20_ctx chacha20;    bzero(&chacha20, sizeof(chacha20));
+			chacha20_ctx chacha20 = {0};
             
-            char temp[64];  bzero(temp, 64); char temp2[64];  bzero(temp2, 64);
+			char temp[64] = {0}; char temp2[64] = {0};
             
-            char *reply = new char[resultLen+18];
+			vector<char> _reply_vec(resultLen+18);
+            char *reply = &_reply_vec[0];
             reply[0] = resultLen%256;
             reply[1] = (resultLen-(uint8_t)reply[0])/256;
             
@@ -218,8 +232,7 @@ void broadcastMessage(void *sender, char *resultData, size_t resultLen) {
             poly1305_context verifyContext; bzero(&verifyContext, sizeof(verifyContext));
             poly1305_init(&verifyContext, (const unsigned char*)temp2);
             {
-                char waste[16];
-                bzero(waste, 16);
+				char waste[16] = {0};
                 
                 poly1305_update(&verifyContext, (const unsigned char *)reply, 2);
                 poly1305_update(&verifyContext, (const unsigned char *)waste, 14);
@@ -234,14 +247,12 @@ void broadcastMessage(void *sender, char *resultData, size_t resultLen) {
             }
             poly1305_finish(&verifyContext, (unsigned char*)&reply[resultLen+2]);
 #else
-            char verify[16];
-            memset(verify, 0, 16);
+			char verify[16] = {0};
             Poly1305_GenKey((const unsigned char *)temp2, (uint8_t *)reply, resultLen, Type_Data_With_Length, verify);
             memcpy((unsigned char*)&reply[resultLen+2], verify, 16);
 #endif
             
             send(socketNumber, reply, resultLen+18,0);
-            delete [] reply;
             pthread_mutex_unlock(&connection[i].mutex);
         }
     }
@@ -251,17 +262,17 @@ void *connectionLoop(void *threadInfo) {
     int subSocket = info->subSocket;    ssize_t len;
     if (subSocket >= 0) {
 #if HomeKitLog == 1
-        printf("Start Connect: %d\n", subSocket);
+        g_homekit_logger("Start Connect: %d\n", subSocket);
 #endif
         
         do {
             len = recv(subSocket, info->buffer, 4096,0);
 #if HomeKitLog == 1
-            printf("Return len %d for socket %d\n", len, subSocket);
+            g_homekit_logger("Return len %d for socket %d\n", len, subSocket);
 #endif
             
 #if HomeKitReplyHeaderLog == 1
-            printf("Message: %s\n", info->buffer);
+            g_homekit_logger("Message: %s\n", info->buffer);
 #endif
             
             PHKNetworkMessage msg(info->buffer);
@@ -298,7 +309,7 @@ void *connectionLoop(void *threadInfo) {
         close(subSocket);
 #endif
 #if HomeKitLog == 1
-        printf("Stop Connect: %d\n", subSocket);
+        g_homekit_logger("Stop Connect: %d\n", subSocket);
 #endif
         
         info->subSocket = -1;
@@ -307,8 +318,26 @@ void *connectionLoop(void *threadInfo) {
     return NULL;
 }
 
+void PHKNetworkIP::closeAcceptConnection(){
+
+    if (_socket_v4 >= 0)
+    {
+#ifdef _WIN32
+        closesocket(_socket_v4);
+#else
+		shutdown(_socket_v4,SHUT_RDWR);
+        close(_socket_v4);
+#endif
+		_socket_v4 = -1;
+    }
+}
+
 void PHKNetworkIP::handleConnection() const {
     int subSocket = accept(_socket_v4, 0, NULL);
+	if (subSocket < 0)
+	{
+		return ;
+	}
     
     int index = -1;
     for (int i = 0; i < numberOfClient; i++) {
@@ -339,7 +368,9 @@ void PHKNetworkIP::handleConnection() const {
 //Passed-in buf is len and data_buf
 void connectionInfo::Poly1305_GenKey(const unsigned char * key, uint8_t * buf, uint16_t len, Poly1305Type_t type, char* verify)
 {
-    printf("Length: %d\n", buf[0]);
+#if HomeKitLog == 1
+	g_homekit_logger("Length: %d\n", buf[0]);
+#endif
     if (key == NULL || buf == NULL || len < 2 || verify == NULL)
         return;
     
@@ -372,7 +403,7 @@ void connectionInfo::Poly1305_GenKey(const unsigned char * key, uint8_t * buf, u
     
     poly1305_update(&verifyContext, (const unsigned char *)&_len, 1);
     poly1305_update(&verifyContext, (const unsigned char *)&waste, 7);
-    _len = len;
+    _len = (unsigned char)len;
     
     poly1305_update(&verifyContext, (const unsigned char *)&_len, 1);
     _len = len/256;
@@ -406,7 +437,7 @@ void connectionInfo::handlePairSeup() {
         switch (state) {
             case State_M1_SRPStartRequest: {
 #if HomeKitLog == 1
-                printf("%s, %d: State_M1_SRPStartRequest\n", __func__, __LINE__);
+                g_homekit_logger("%s, %d: State_M1_SRPStartRequest\n", __func__, __LINE__);
 #endif
                 PHKNetworkMessageDataRecord saltRec;
                 PHKNetworkMessageDataRecord publicKeyRec;
@@ -419,7 +450,7 @@ void connectionInfo::handlePairSeup() {
                 SRP_RESULT result = SRP_set_username(srp, "Pair-Setup");
                 int modulusSize = sizeof(modulusStr) / sizeof(modulusStr[0]);
                 result = SRP_set_params(srp, (const unsigned char *)modulusStr, modulusSize, (const unsigned char *)generator, 1, saltChar, 16);
-                result = SRP_set_auth_password(srp, devicePassword);
+                result = SRP_set_auth_password(srp, g_PinCode.c_str() );
                 result = SRP_gen_pub(srp, &publicKey);
                 
                 saltRec.index = 2;
@@ -440,7 +471,7 @@ void connectionInfo::handlePairSeup() {
                 break;
             case State_M3_SRPVerifyRequest: {
 #if HomeKitLog == 1
-                printf("%s, %d: State_M3_SRPVerifyRequest\n", __func__, __LINE__);
+                g_homekit_logger("%s, %d: State_M3_SRPVerifyRequest\n", __func__, __LINE__);
 #endif
                 const char *keyStr = 0;
                 int keyLen = 0;
@@ -466,7 +497,7 @@ void connectionInfo::handlePairSeup() {
                     responseRecord.length = 1;
                     mResponse.data.addRecord(responseRecord);
 #if HomeKitLog == 1
-                    printf("Oops at M3\n");
+                    g_homekit_logger("Oops at M3\n");
 #endif
                 } else {
                     SRP_respond(srp, &response);
@@ -478,7 +509,7 @@ void connectionInfo::handlePairSeup() {
                     bcopy(response->data, responseRecord.data, responseRecord.length);
                     mResponse.data.addRecord(responseRecord);
 #if HomeKitLog == 1
-                    printf("Password Correct\n");
+                    g_homekit_logger("Password Correct\n");
 #endif
                 }
                 
@@ -490,7 +521,7 @@ void connectionInfo::handlePairSeup() {
                 break;
             case State_M5_ExchangeRequest: {
 #if HomeKitLog == 1
-                printf("%s, %d: State_M5_ExchangeRequest\n", __func__, __LINE__);
+                g_homekit_logger("%s, %d: State_M5_ExchangeRequest\n", __func__, __LINE__);
 #endif
                 
                 const char *encryptedPackage = NULL;int packageLen = 0;
@@ -526,20 +557,20 @@ void connectionInfo::handlePairSeup() {
                     
 #if HomeKitLog == 1
                     for(int j = 0; j < packageLen-16; j++)
-                        printf("%X ", decryptedData[j]);
-                    printf("\n");
+                        g_homekit_logger("%X ", decryptedData[j]);
+                    g_homekit_logger("\n");
                     
-                    printf("verify: ");
+                    g_homekit_logger("verify: ");
                     for(int j = 0; j < 16; j++)
-                        printf("%X ", verify[j]);
-                    printf("\n");
+                        g_homekit_logger("%X ", verify[j]);
+                    g_homekit_logger("\n");
                     
-                    printf("mac: ");
+                    g_homekit_logger("mac: ");
                     for(int j = 0; j < 16; j++)
-                        printf("%X ", mac[j]);
-                    printf("\n");
+                        g_homekit_logger("%X ", mac[j]);
+                    g_homekit_logger("\n");
                     
-                    printf("Corrupt TLv8 at M5\n");
+                    g_homekit_logger("Corrupt TLv8 at M5\n");
 #endif
                 } else {
                     /*
@@ -554,7 +585,7 @@ void connectionInfo::handlePairSeup() {
                     PHKKeyRecord newRecord;
                     bcopy(controllerIdentifier, newRecord.controllerID, 36);
                     bcopy(controllerPublicKey, newRecord.publicKey, 32);
-                    addControllerKey(newRecord);
+                    AccessorySet::getInstance().Controllers.addControllerKey(newRecord);
                     
                     const char salt[] = "Pair-Setup-Controller-Sign-Salt";
                     const char info[] = "Pair-Setup-Controller-Sign-Info";
@@ -573,7 +604,7 @@ void connectionInfo::handlePairSeup() {
                         
                         {
                             PHKNetworkMessageDataRecord usernameRecord;
-                            usernameRecord.activate = true; usernameRecord.index = 1;    usernameRecord.length = strlen(deviceIdentity); usernameRecord.data = new char[usernameRecord.length]; bcopy(deviceIdentity, usernameRecord.data, usernameRecord.length);
+                            usernameRecord.activate = true; usernameRecord.index = 1;    usernameRecord.length = g_DeviceIdentity.size(); usernameRecord.data = new char[usernameRecord.length]; bcopy(g_DeviceIdentity.c_str(), usernameRecord.data, usernameRecord.length);
                             returnTLV8->addRecord(usernameRecord);
                         }
                         
@@ -586,7 +617,7 @@ void connectionInfo::handlePairSeup() {
                             uint8_t output[150];
                             hkdf((const unsigned char*)salt, strlen(salt), (const unsigned char*)secretKey->data, secretKey->length, (const unsigned char*)info, strlen(info), output, 32);
                             
-                            bcopy(deviceIdentity, &output[32], strlen(deviceIdentity));
+                            bcopy(g_DeviceIdentity.c_str() , &output[32], g_DeviceIdentity.size() );
                             
                             char *signature = new char[64];
                             ed25519_secret_key edSecret;
@@ -594,8 +625,8 @@ void connectionInfo::handlePairSeup() {
                             ed25519_public_key edPubKey;
                             ed25519_publickey(edSecret, edPubKey);
                             
-                            bcopy(edPubKey, &output[32+strlen(deviceIdentity)], 32);
-                            ed25519_sign(output, 64+strlen(deviceIdentity), (const unsigned char*)edSecret, (const unsigned char*)edPubKey, (unsigned char *)signature);
+                            bcopy(edPubKey, &output[32+g_DeviceIdentity.size()], 32);
+                            ed25519_sign(output, 64+g_DeviceIdentity.size(), (const unsigned char*)edSecret, (const unsigned char*)edPubKey, (unsigned char *)signature);
                             PHKNetworkMessageDataRecord signatureRecord;
                             signatureRecord.activate = true; signatureRecord.data = signature;   signatureRecord.index = 10;    signatureRecord.length = 64;
                             returnTLV8->addRecord(signatureRecord);
@@ -620,12 +651,11 @@ void connectionInfo::handlePairSeup() {
                             chacha20_ctx ctx;   bzero(&ctx, sizeof(ctx));
                             
                             chacha20_setup(&ctx, (const uint8_t *)sessionKey, 32, (uint8_t *)"PS-Msg06");
-                            char buffer[64], key[64];   bzero(buffer, 64);
+							char buffer[64] = {0}, key[64];
                             chacha20_encrypt(&ctx, (const uint8_t *)buffer, (uint8_t *)key, 64);
                             chacha20_encrypt(&ctx, (const uint8_t *)tlv8Data, (uint8_t *)tlv8Record.data, tlv8Len);
                             
-                            char verify[16];
-                            memset(verify, 0, 16);
+							char verify[16] = {0};
                             Poly1305_GenKey((const unsigned char *)key, (unsigned char*)tlv8Record.data, tlv8Len, Type_Data_Without_Length, verify);
                             memcpy((unsigned char *)&tlv8Record.data[tlv8Len], verify, 16);
                         }
@@ -655,16 +685,16 @@ void connectionInfo::handlePairSeup() {
         mResponse.getBinaryPtr(&responseBuffer, &responseLen);
         if (responseBuffer) {
 #if HomeKitLog == 1
-            printf("%s, %d, responseBuffer = %s, responseLen = %d\n", __func__, __LINE__, responseBuffer, responseLen);
+            g_homekit_logger("%s, %d, responseBuffer = %s, responseLen = %d\n", __func__, __LINE__, responseBuffer, responseLen);
 #endif
             int len = send(subSocket, responseBuffer, (size_t)responseLen,0);
             delete [] responseBuffer;
 #if HomeKitLog == 1
-            printf("Pair Setup Transfered length %d\n", len);
+            g_homekit_logger("Pair Setup Transfered length %d\n", len);
 #endif
         } else {
 #if HomeKitLog == 1
-            printf("Why empty response\n");
+            g_homekit_logger("Why empty response\n");
 #endif
         }
         
@@ -683,7 +713,7 @@ void connectionInfo::handlePairVerify() {
     
     uint8_t enKey[32];
 #if HomeKitLog == 1
-    printf("Start Pair Verify\n");
+    g_homekit_logger("Start Pair Verify\n");
 #endif
     
     do {
@@ -693,7 +723,7 @@ void connectionInfo::handlePairVerify() {
         switch (state) {
             case State_Pair_Verify_M1: {
 #if HomeKitLog == 1
-                printf("Pair Verify M1\n");
+                g_homekit_logger("Pair Verify M1\n");
 #endif
                 bcopy(msg.data.dataPtrForIndex(3), controllerPublicKey, 32);
                 for (short i = 0; i < sizeof(secretKey); i++) {
@@ -702,11 +732,12 @@ void connectionInfo::handlePairVerify() {
                 curve25519_donna((u8*)publicKey, (const u8 *)secretKey, (const u8 *)curveBasePoint);
                 
                 curve25519_donna(sharedKey, secretKey, controllerPublicKey);
-                
-                char *temp = new char[100];
+
+				vector<char> _temp_vec(100);
+                char *temp = &_temp_vec[0];
                 bcopy(publicKey, temp, 32);
-                bcopy(deviceIdentity, &temp[32], strlen(deviceIdentity));
-                bcopy(controllerPublicKey, &temp[32+strlen(deviceIdentity)], 32);
+                bcopy(g_DeviceIdentity.c_str(), &temp[32], g_DeviceIdentity.size());
+                bcopy(controllerPublicKey, &temp[32+g_DeviceIdentity.size()], 32);
                 
                 PHKNetworkMessageDataRecord signRecord;
                 signRecord.activate = true; signRecord.data = new char[64]; signRecord.index = 10;  signRecord.length = 64;
@@ -716,13 +747,12 @@ void connectionInfo::handlePairVerify() {
                 ed25519_public_key edPubKey;
                 ed25519_publickey(edSecret, edPubKey);
                 
-                ed25519_sign((const unsigned char *)temp, 64+strlen(deviceIdentity), edSecret, edPubKey, (unsigned char *)signRecord.data);
-                delete [] temp;
+                ed25519_sign((const unsigned char *)temp, 64+g_DeviceIdentity.size(), edSecret, edPubKey, (unsigned char *)signRecord.data);
                 
                 PHKNetworkMessageDataRecord idRecord;
                 idRecord.activate = true;
                 idRecord.data = new char[17];
-                bcopy(deviceIdentity, idRecord.data, 17);
+				bcopy(g_DeviceIdentity.c_str() , idRecord.data, 17);
                 idRecord.index = 1;
                 idRecord.length = (unsigned int)17;
                 
@@ -745,10 +775,12 @@ void connectionInfo::handlePairVerify() {
                 const char *plainMsg = 0;   unsigned short msgLen = 0;
                 data.rawData(&plainMsg, &msgLen);
                 
-                char *encryptMsg = new char[msgLen+16];
-                char *polyKey = new char[64];   bzero(polyKey, 64);
+				vector<char> _encryptMsg_vec(msgLen+16);
+				vector<char> _polyKey_vec(msgLen+16);
+                char *encryptMsg = &_encryptMsg_vec[0];
+				char polyKey[64] = {0};
                 
-                char zero[64];  bzero(zero, 64);
+				char zero[64] = {0};
                 
                 chacha20_ctx chacha;
                 chacha20_setup(&chacha, enKey, 32, (uint8_t *)"PV-Msg02");
@@ -757,8 +789,7 @@ void connectionInfo::handlePairVerify() {
                 
                 delete [] plainMsg;
                 
-                char verify[16];
-                memset(verify, 0, 16);
+				char verify[16] = {0};
                 Poly1305_GenKey((const unsigned char *)polyKey, (uint8_t *)encryptMsg, msgLen, Type_Data_Without_Length, verify);
                 memcpy((unsigned char *)&encryptMsg[msgLen], verify, 16);
                 
@@ -770,33 +801,32 @@ void connectionInfo::handlePairVerify() {
                 bcopy(encryptMsg, encryptRecord.data, encryptRecord.length);
                 response.data.addRecord(encryptRecord);
                 
-                delete [] encryptMsg;
-                delete [] polyKey;
             }
                 break;
             case State_Pair_Verify_M3: {
 #if HomeKitLog == 1
-                printf("Pair Verify M3\n");
+                g_homekit_logger("Pair Verify M3\n");
 #endif
                 char *encryptedData = msg.data.dataPtrForIndex(5);
                 short packageLen = msg.data.lengthForIndex(5);
                 
-                chacha20_ctx chacha20;    bzero(&chacha20, sizeof(chacha20));
+				chacha20_ctx chacha20 = {0};
                 chacha20_setup(&chacha20, (const uint8_t *)enKey, 32, (uint8_t *)"PV-Msg03");
                 
                 //Ploy1305 key
-                char temp[64];  bzero(temp, 64); char temp2[64];  bzero(temp2, 64);
+				char temp[64] = {0}; char temp2[64] = {0};
                 chacha20_encrypt(&chacha20, (const uint8_t*)temp, (uint8_t *)temp2, 64);
                 
-                char verify[16];    bzero(verify, 16);
+				char verify[16] = {0};
                 Poly1305_GenKey((const unsigned char *)temp2, (uint8_t *)encryptedData, packageLen - 16, Type_Data_Without_Length, verify);
                 
                 if (!bcmp(verify, &encryptedData[packageLen-16], 16)) {
-                    char *decryptData = new char[packageLen-16];
+					vector<char> decryptData_vec(packageLen-16);
+                    char *decryptData = &decryptData_vec[0];
                     chacha20_decrypt(&chacha20, (const uint8_t *)encryptedData, (uint8_t *)decryptData, packageLen-16);
                     PHKNetworkMessageData data = PHKNetworkMessageData(decryptData, packageLen-16);
                     
-                    PHKKeyRecord rec = getControllerKey(data.dataPtrForIndex(1));
+                    PHKKeyRecord rec = AccessorySet::getInstance().Controllers.getControllerKey(data.dataPtrForIndex(1));
                     
                     char tempMsg[100];
                     bcopy(controllerPublicKey, tempMsg, 32);
@@ -813,7 +843,7 @@ void connectionInfo::handlePairVerify() {
                         hkdf((uint8_t *)"Control-Salt", 12, sharedKey, 32, (uint8_t *)"Control-Write-Encryption-Key", 28, controllerToAccessoryKey, 32);
                         
 #if HomeKitLog == 1
-                        printf("Verify success\n");
+                        g_homekit_logger("Verify success\n");
 #endif
                         
                     } else {
@@ -825,11 +855,10 @@ void connectionInfo::handlePairVerify() {
                         error.length = 1;
                         response.data.addRecord(error);
 #if HomeKitLog == 1
-                        printf("Verify failed\n");
+                        g_homekit_logger("Verify failed\n");
 #endif
                     }
                     
-                    delete [] decryptData;
                 }
                 
             }
@@ -855,13 +884,14 @@ void connectionInfo::handlePairVerify() {
 
 void connectionInfo::handleAccessoryRequest() {
     connected = true;
-    
-    char *decryptData = new char[2048];
+
+	vector<char> decryptData_vec(2048);
+    char *decryptData = &decryptData_vec[0];
     
     int len;
     
 #if HomeKitLog == 1
-    printf("Successfully Connect\n");
+    g_homekit_logger("Successfully Connect\n");
 #endif
     
     numberOfMsgRec = 0;
@@ -881,50 +911,57 @@ void connectionInfo::handleAccessoryRequest() {
             
             chacha20_ctx chacha20;    bzero(&chacha20, sizeof(chacha20));
             
-            printf("send: %llx\n", numberOfMsgRec);
-            if (!is_big_endian()) numberOfMsgRec = bswap_64(numberOfMsgRec);
-            printf("send: %llx\n", numberOfMsgRec);
-            chacha20_setup(&chacha20, (const uint8_t *)controllerToAccessoryKey, 32, (uint8_t *)&numberOfMsgRec);
+#if HomeKitLog == 1
+            g_homekit_logger("send: %llx\n", numberOfMsgRec);
+#endif
+			if (!is_big_endian()) numberOfMsgRec = bswap_64(numberOfMsgRec);
+#if HomeKitLog == 1
+            g_homekit_logger("send: %llx\n", numberOfMsgRec);
+#endif
+			chacha20_setup(&chacha20, (const uint8_t *)controllerToAccessoryKey, 32, (uint8_t *)&numberOfMsgRec);
             if (!is_big_endian()) numberOfMsgRec = bswap_64(numberOfMsgRec);
             numberOfMsgRec++;
-            printf("send: %llx\n", numberOfMsgRec);
-            
-            char temp[64];  bzero(temp, 64); char temp2[64];  bzero(temp2, 64);
+#if HomeKitLog == 1
+            g_homekit_logger("send: %llx\n", numberOfMsgRec);
+#endif            
+			char temp[64] = {0}; char temp2[64] = {0};
             chacha20_encrypt(&chacha20, (const uint8_t*)temp, (uint8_t *)temp2, 64);
             
             //Ploy1305 key
-            char verify[16];    bzero(verify, 16);
+			char verify[16] = {0};
             Poly1305_GenKey((const unsigned char *)temp2, (uint8_t *)buffer, msgLen, Type_Data_With_Length, verify);
             
             bzero(decryptData, 2048);
             chacha20_encrypt(&chacha20, (const uint8_t *)&buffer[2], (uint8_t *)decryptData, msgLen);
             
-            printf("Request: %s\nPacketLen: %d\n, MessageLen: %d\n", decryptData, len, strlen(decryptData));
+#if HomeKitLog == 1
+            g_homekit_logger("Request: %s\nPacketLen: %d\n, MessageLen: %d\n", decryptData, len, strlen(decryptData));
+#endif
             
             if(len >= (2 + msgLen + 16)
                && memcmp((void *)verify, (void *)&buffer[2 + msgLen], 16) == 0) {
 #if HomeKitLog == 1
-                printf("Verify successfully!\n");
+                g_homekit_logger("Verify successfully!\n");
 #endif
             }
             else {
                 
 #if HomeKitLog == 1
-                printf("Passed-in data is no-verified!\n");
+                g_homekit_logger("Passed-in data is no-verified!\n");
                 for (int i = 0; i < 16; i++)
-                    printf("%ud ", verify[i]);
-                printf("\n");
+                    g_homekit_logger("%ud ", verify[i]);
+                g_homekit_logger("\n");
                 for (int i = 0; i < 16; i++)
-                    printf("%ud ", buffer[2 + msgLen+i]);
-                printf("\n");
+                    g_homekit_logger("%ud ", buffer[2 + msgLen+i]);
+                g_homekit_logger("\n");
                 
                 unsigned long long numberOfMsgRec_ = numberOfMsgRec-1;
                 chacha20_setup(&chacha20, (const uint8_t *)controllerToAccessoryKey, 32, (uint8_t *)&numberOfMsgRec_);
                 chacha20_encrypt(&chacha20, (const uint8_t*)temp, (uint8_t *)temp2, 64);
                 Poly1305_GenKey((const unsigned char *)temp, (uint8_t *)buffer, msgLen, Type_Data_With_Length, verify);
                 for (int i = 0; i < 16; i++)
-                    printf("%ud ", verify[i]);
-                printf("\n");
+                    g_homekit_logger("%ud ", verify[i]);
+                g_homekit_logger("\n");
                 
 #endif
                 continue;
@@ -937,7 +974,8 @@ void connectionInfo::handleAccessoryRequest() {
             handleAccessory(decryptData, msgLen, &resultData, &resultLen, this);
             
             //18 = 2(resultLen) + 16(poly1305 verify key)
-            char *reply = new char[resultLen+18];
+			vector<char> reply_vec(resultLen+18);
+            char *reply = &reply_vec[0];
             reply[0] = resultLen%256;
             reply[1] = (resultLen-(uint8_t)reply[0])/256;
             
@@ -956,14 +994,12 @@ void connectionInfo::handleAccessoryRequest() {
             
             pthread_mutex_unlock(&mutex);
             
-            delete [] reply;
             delete [] resultData;
         }
     } while (len > 0);
     
     pthread_mutex_destroy(&mutex);
     
-    delete [] decryptData;
     connected = false;
     
 }
@@ -971,6 +1007,15 @@ void connectionInfo::handleAccessoryRequest() {
 //Object Logic
 PHKNetworkIP::~PHKNetworkIP() {
     DNSServiceRefDeallocate(netServiceV4);
+
+	for (int i = 0; i < numberOfClient; i++) {
+		if ( connection[i].connected )
+		{
+			pthread_join(connection[i].thread,NULL);
+		}
+    }
+
+	SRP_finalize_library();
 }
 
 const char *copyLine(const char *rawData, char *destination) {
@@ -1182,4 +1227,13 @@ PHKNetworkMessageDataRecord &PHKNetworkMessageDataRecord::operator=(const PHKNet
 
 PHKNetworkMessageDataRecord::~PHKNetworkMessageDataRecord() {
     if (length) delete [] data;
+}
+
+//remove all controller pairing
+void resetControllerAll()
+{
+	AccessorySetAutoLock autolock;
+
+	AccessorySet::getInstance().Controllers.resetController();
+	g_currentConfigurationNum = 1;
 }

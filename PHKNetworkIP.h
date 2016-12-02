@@ -77,13 +77,20 @@ typedef enum
 void broadcastMessage(void *sender, char *resultData, size_t resultLen);
 
 class PHKNetworkIP {
+
     void setupSocket();
     void handlePairSeup(int subSocket, char *buffer) const;
     void handlePairVerify(int subSocket, char *buffer) const;
+
 public:
-    PHKNetworkIP();
+	PHKNetworkIP(const string& name
+		,const string& pinCode
+		,const string& identity
+		,const string& controllerRecordsPath);
     void handleConnection() const;
     ~PHKNetworkIP();
+
+    void closeAcceptConnection();
 };
 
 class PHKNetworkMessageDataRecord {
@@ -153,7 +160,7 @@ public:
     unsigned long long numberOfMsgRec;
     unsigned long long numberOfMsgSend;
     int subSocket;
-    char buffer[4096];
+    char buffer[4096+1];
 
     void *notificationList[numberOfNotifiableValue];
 
@@ -162,11 +169,19 @@ public:
     void handleAccessoryRequest();
 
 	connectionInfo()
-		: subSocket(0)
-		, numberOfMsgRec(0)
-		, numberOfMsgSend(0)
-		, connected(false)
 	{
+		init();
+ 	}
+	void init()
+	{
+		subSocket = (-1);
+		numberOfMsgRec = (0);
+		numberOfMsgSend = (0);
+		connected = (false);
+		memset(buffer,0,4096+1);
+		memset(notificationList,0,sizeof(void*)*numberOfNotifiableValue);
+		memset(controllerToAccessoryKey,0,sizeof(uint8_t)*32);
+		memset(accessoryToControllerKey,0,sizeof(uint8_t)*32);
 	}
 
     void Poly1305_GenKey(const unsigned char * key, uint8_t * buf, uint16_t len, Poly1305Type_t type, char* verify);
@@ -202,3 +217,6 @@ public:
 };
 
 void updateConfiguration();
+
+//remove all controller pairing
+void resetControllerAll();

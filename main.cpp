@@ -60,16 +60,12 @@ int main(int argc, const char * argv[]) {
 #if PowerOnTest==1
     printf("poweron: %d\n", poly1305_power_on_self_test());
 #endif
-
-#ifdef _WIN32
-	WSADATA wsaData;
-	WSAStartup(2, &wsaData);
-#endif    
+    
     // insert code here...
     if (argc > 1) {
 	//If there's some argument
 	//Currently means reset
-	resetControllerRecord();
+	resetControllerAll();
     }
 
     initAccessorySet();
@@ -78,10 +74,13 @@ int main(int argc, const char * argv[]) {
 	setupPort();
 #endif
 
-	PHKNetworkIP networkIP;
+	PHKNetworkIP networkIP(deviceName,devicePassword,deviceIdentity,controllerRecordsAddress);
     do {
         networkIP.handleConnection();
     } while (true);
+
+	//if you running PHKNetworkIP new accept thread, 
+	//call PHKNetworkIP::closeAcceptConnection to stop.
 
 #ifdef _WIN32
 	WSACleanup();

@@ -222,8 +222,8 @@ public:
     virtual string value() = 0;
     virtual void setValue(string str) = 0;
     virtual string describe() = 0;
-    bool writable() { return premission&premission_write; }
-    bool notifiable() { return premission&premission_notify; }
+    bool writable() { return premission&premission_write ? true : false ; }
+    bool notifiable() { return premission&premission_notify ? true : false; }
 };
 
 //To store value of device state, subclass the following type
@@ -242,7 +242,11 @@ public:
         return "0";
     }
     virtual void setValue(string str) {
-        bool newValue = (strncmp("true", str.c_str(), 4)==0);
+		bool newValue = false;
+		if (strncmp("true", str.c_str(), 4)==0 || strncmp("1", str.c_str(), 1)==0 )
+		{
+			newValue = true;
+		}
         if (valueChangeFunctionCall)
             valueChangeFunctionCall(_value, newValue);
         _value = newValue;
@@ -303,7 +307,39 @@ public:
         return temp;
     }
     virtual void setValue(string str) {
-        float temp = (float)atoi(str.c_str());
+        int temp = (int)atoi(str.c_str());
+        if (temp == temp) {
+            if (valueChangeFunctionCall)
+                valueChangeFunctionCall(_value, (int)temp);
+            _value = (int) temp;
+        }
+    }
+    virtual string describe();
+};
+
+class uint8Characteristics: public characteristics {
+public:
+    int _value;
+    const int _minVal, _maxVal, _step;
+    const unit _unit;
+    void (*valueChangeFunctionCall)(int oldValue, int newValue);
+    uint8Characteristics(unsigned short _type, int _premission, int minVal, int maxVal, int step, unit charUnit)
+		: valueChangeFunctionCall(NULL)
+		, characteristics(_type, _premission)
+		, _minVal(minVal)
+		, _maxVal(maxVal)
+		, _step(step)
+		, _unit(charUnit) 
+	{
+		_value = minVal;
+    }
+    virtual string value() {
+        char temp[16];
+        snprintf(temp, 16, "%d", _value);
+        return temp;
+    }
+    virtual void setValue(string str) {
+        int temp = (int)atoi(str.c_str());
         if (temp == temp) {
             if (valueChangeFunctionCall)
                 valueChangeFunctionCall(_value, (int)temp);
@@ -347,10 +383,10 @@ public:
 };
 
 class Accessory {
-public:
     int numberOfInstance;
-    int aid;
     vector<Service *>_services;
+public:
+    int aid;
     void addService(Service *ser) {
         ser->serviceID = ++numberOfInstance;
         _services.push_back(ser);
@@ -367,6 +403,7 @@ public:
                 exist = true;
             }
         }
+        delete ser;
         return exist;
     }
     bool removeCharacteristics(characteristics *cha) {
@@ -379,11 +416,16 @@ public:
                 }
             }
         }
+        delete cha;
         return exist;
     }
     Accessory() : numberOfInstance (0)
-	{
-	}
+    {
+    }
+    virtual ~Accessory()
+    {
+        RemoveALL();
+    }
     short numberOfService() { return _services.size(); }
     Service *serviceAtIndex(int index) {
         for (vector<Service *>::iterator it = _services.begin(); it != _services.end(); it++) {
@@ -404,14 +446,27 @@ public:
         return NULL;
     }
     string describe();
+    void RemoveALL()
+    {
+        for (vector<Service *>::iterator it = _services.begin(); it != _services.end(); it++) {
+            for (vector<characteristics *>::iterator jt = (*it)->_characteristics.begin(); jt != (*it)->_characteristics.end(); jt++) {
+                delete *jt;
+            }
+            delete *it;
+        }
+        _services.clear();
+		numberOfInstance = 0;
+    }
 };
+
 
 class AccessorySet {
 private:
     vector<Accessory *> _accessories;
     int _aid;
+    pthread_mutex_t accessoryMutex;
     AccessorySet() {
-		_aid = 0;
+        _aid = 0;
         pthread_mutex_init(&accessoryMutex, NULL);
     }
     AccessorySet(AccessorySet const&);
@@ -422,9 +477,10 @@ public:
         
         return instance;
     }
-    pthread_mutex_t accessoryMutex;
+	void lock();
+	void unlock();
     short numberOfAccessory() {
-        return _accessories.size();
+        return (short) _accessories.size();
     }
     Accessory *accessoryAtIndex(int index) {
         for (vector<Accessory *>::iterator it = _accessories.begin(); it != _accessories.end(); it++) {
@@ -446,12 +502,34 @@ public:
                 exist = true;
             }
         }
+        delete acc;
         return exist;
+    }
+    void RemoveALL() {
+        for (vector<Accessory *>::iterator it = _accessories.begin(); it != _accessories.end(); it++) {
+            delete *it;
+        }
+        _accessories.clear();
+        _aid = 0;
     }
     ~AccessorySet() {
         pthread_mutex_destroy(&accessoryMutex);
+        RemoveALL();
     }
     string describe();
+
+	ControllerRecord Controllers;
+};
+
+class AccessorySetAutoLock {
+public:
+	AccessorySetAutoLock(){
+		AccessorySet::getInstance().lock();
+	}
+
+	virtual ~AccessorySetAutoLock(){
+		AccessorySet::getInstance().unlock();
+	}
 };
 
 typedef void (*identifyFunction)(bool oldValue, bool newValue);
@@ -462,3 +540,8 @@ void addInfoServiceToAccessory(Accessory *acc, string accName, string manufactue
 void handleAccessory(const char *request, unsigned int requestLen, char **reply, unsigned int *replyLen, connectionInfo *sender);
 
 void updateValueFromDeviceEnd(characteristics *c, int aid, int iid, string value);
+
+//logger
+typedef int(*PERSONAL_LOGGER_FUNCTION)(const char* msg,...);
+extern PERSONAL_LOGGER_FUNCTION g_homekit_logger;
+void Personal_homekit_set_logger_function(PERSONAL_LOGGER_FUNCTION);
