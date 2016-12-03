@@ -81,11 +81,11 @@ typedef int ssize_t;
 #endif
 
 #ifndef vsnprintf
-#define vsnprintf _vsnprintf
+#define vsnprintf(s, n, format, ...) _vsnprintf_s(s, n, _TRUNCATE, format, __VA_ARGS__)
 #endif
 
 #ifndef snprintf
-#define snprintf _snprintf
+#define snprintf(s, n, format, ...) _snprintf_s(s, n, _TRUNCATE, format, __VA_ARGS__)
 #endif
 
 

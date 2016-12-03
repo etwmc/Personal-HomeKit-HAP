@@ -50,7 +50,7 @@ static void pthread_create(pthread_t* thread, const pthread_attr_t *attr_null,vo
 	*thread = (HANDLE)_beginthreadex(NULL , 0 , _threadcallback::call , (void*)c ,  0 ,NULL );
 }
 
-static void pthread_join(pthread_t* thread,void * nazo)
+static void pthread_join(pthread_t thread,void * nazo)
 {
 	::WaitForSingleObject( thread , INFINITE);
 }

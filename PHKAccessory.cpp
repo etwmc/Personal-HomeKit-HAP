@@ -38,12 +38,12 @@ inline string attribute(unsigned short type, unsigned short acclaim, int p, bool
     result += "]";
     result += ",";
     
-    char tempStr[4];
-    snprintf(tempStr, 4, "%X", type);
+    char tempStr[9];
+    snprintf(tempStr, 9, "%X", type);
     result += wrap("type")+":"+wrap(tempStr);
     result += ",";
     
-    snprintf(tempStr, 4, "%hd", acclaim);
+    snprintf(tempStr, 9, "%hd", acclaim);
     result += wrap("iid")+":"+tempStr;
     result += ",";
     
@@ -53,24 +53,24 @@ inline string attribute(unsigned short type, unsigned short acclaim, int p, bool
 }
 inline string attribute(unsigned short type, unsigned short acclaim, int p, int value, int minVal, int maxVal, int step, unit valueUnit,const std::string& format ) {
     string result;
-    char tempStr[4];
+    char tempStr[9];
     
-    snprintf(tempStr, 4, "%d", value);
+    snprintf(tempStr, 9, "%d", value);
     
     if (p & premission_read) {
         result += wrap("value")+":"+tempStr;
         result += ",";
     }
     
-    snprintf(tempStr, 4, "%d", minVal);
+    snprintf(tempStr, 9, "%d", minVal);
     if (minVal != INT32_MIN)
         result += wrap("minValue")+":"+tempStr+",";
     
-    snprintf(tempStr, 4, "%d", maxVal);
+    snprintf(tempStr, 9, "%d", maxVal);
     if (maxVal != INT32_MAX)
         result += wrap("maxValue")+":"+tempStr+",";
     
-    snprintf(tempStr, 4, "%d", step);
+    snprintf(tempStr, 9, "%d", step);
     if (step > 0)
         result += wrap("minStep")+":"+tempStr+",";
     
@@ -83,11 +83,11 @@ inline string attribute(unsigned short type, unsigned short acclaim, int p, int 
     result += "]";
     result += ",";
     
-    snprintf(tempStr, 4, "%X", type);
+    snprintf(tempStr, 9, "%X", type);
     result += wrap("type")+":"+wrap(tempStr);
     result += ",";
     
-    snprintf(tempStr, 4, "%hd", acclaim);
+    snprintf(tempStr, 9, "%hd", acclaim);
     result += wrap("iid")+":"+tempStr;
     result += ",";
     
@@ -109,24 +109,24 @@ inline string attribute(unsigned short type, unsigned short acclaim, int p, int 
 }
 inline string attribute(unsigned short type, unsigned short acclaim, int p, float value, float minVal, float maxVal, float step, unit valueUnit) {
     string result;
-    char tempStr[4];
+    char tempStr[9];
     
-    snprintf(tempStr, 4, "%f", value);
+    snprintf(tempStr, 9, "%f", value);
     
     if (p & premission_read) {
         result += wrap("value")+":"+tempStr;
         result += ",";
     }
     
-    snprintf(tempStr, 4, "%f", minVal);
+    snprintf(tempStr, 9, "%f", minVal);
     if (minVal != INT32_MIN)
         result += wrap("minValue")+":"+tempStr+",";
     
-    snprintf(tempStr, 4, "%f", maxVal);
+    snprintf(tempStr, 9, "%f", maxVal);
     if (maxVal != INT32_MAX)
         result += wrap("maxValue")+":"+tempStr+",";
     
-    snprintf(tempStr, 4, "%f", step);
+    snprintf(tempStr, 9, "%f", step);
     if (step > 0)
         result += wrap("minStep")+":"+tempStr+",";
     
@@ -139,11 +139,11 @@ inline string attribute(unsigned short type, unsigned short acclaim, int p, floa
     result += "]";
     result += ",";
     
-    snprintf(tempStr, 4, "%X", type);
+    snprintf(tempStr, 9, "%X", type);
     result += wrap("type")+":"+wrap(tempStr);
     result += ",";
     
-    snprintf(tempStr, 4, "%hd", acclaim);
+    snprintf(tempStr, 9, "%hd", acclaim);
     result += wrap("iid")+":"+tempStr;
     result += ",";
     
@@ -165,7 +165,7 @@ inline string attribute(unsigned short type, unsigned short acclaim, int p, floa
 }
 inline string attribute(unsigned short type, unsigned short acclaim, int p, string value, unsigned short len) {
     string result;
-    char tempStr[4];
+    char tempStr[9];
     
     if (p & premission_read) {
         result += wrap("value")+":"+wrap(value.c_str());
@@ -181,16 +181,16 @@ inline string attribute(unsigned short type, unsigned short acclaim, int p, stri
     result += "]";
     result += ",";
     
-    snprintf(tempStr, 4, "%X", type);
+    snprintf(tempStr, 9, "%X", type);
     result += wrap("type")+":"+wrap(tempStr);
     result += ",";
     
-    snprintf(tempStr, 4, "%hd", acclaim);
+    snprintf(tempStr, 9, "%hd", acclaim);
     result += wrap("iid")+":"+tempStr;
     result += ",";
     
     if (len > 0) {
-        snprintf(tempStr, 4, "%hd", len);
+        snprintf(tempStr, 9, "%hd", len);
         result += wrap("maxLen")+":"+tempStr;
         result += ",";
     }
@@ -253,13 +253,13 @@ string Service::describe() {
     string keys[3] = {"iid", "type", "characteristics"};
     string values[3];
     {
-        char temp[8];
-        snprintf(temp, 8, "%d", serviceID);
+        char temp[9];
+        snprintf(temp, 9, "%d", serviceID);
         values[0] = temp;
     }
     {
-        char temp[8];
-        snprintf(temp, 8, "\"%X\"", uuid);
+        char temp[9];
+        snprintf(temp, 9, "\"%X\"", uuid);
         values[1] = temp;
     }
     {
@@ -280,8 +280,8 @@ string Accessory::describe() {
     
     {
         keys[0] = "aid";
-        char temp[8];
-        snprintf(temp,8, "%d", aid);
+        char temp[9];
+        snprintf(temp,9, "%d", aid);
         values[0] = temp;
     }
     
@@ -359,19 +359,6 @@ void *announce(void *info) {
     delete [] info;
 
 	return NULL;
-}
-
-void updateValueFromDeviceEnd(characteristics *c, int aid, int iid, string value) {
-    c->setValue(value);
-	string newValue = c->value();
-    char *broadcastTemp = new char[1024];
-    snprintf(broadcastTemp, 1024, "{\"characteristics\":[{\"aid\":%d,\"iid\":%d,\"value\":%s}]}", aid, iid, newValue.c_str());
-    broadcastInfo * info = new broadcastInfo;
-    info->sender = c;
-    info->desc = broadcastTemp;
-    pthread_t thread;
-    pthread_create(&thread, NULL, announce, info);
-    
 }
 
 void handleAccessory(const char *request, unsigned int requestLen, char **reply, unsigned int *replyLen, connectionInfo *sender) {
@@ -510,9 +497,9 @@ void handleAccessory(const char *request, unsigned int requestLen, char **reply,
 #if HomeKitLog == 1
                         g_homekit_logger("Ask for one characteristics: %d . %d\n", aid, iid);
 #endif
-                        char c1[8], c2[8];
-                        snprintf(c1,8, "%d", aid);
-                        snprintf(c2,8, "%d", iid);
+                        char c1[9], c2[9];
+                        snprintf(c1,9, "%d", aid);
+                        snprintf(c2,9, "%d", iid);
                         string s[3] = {string(c1), string(c2), c->value()};
                         string k[3] = {"aid", "iid", "value"};
                         if (result.length() != 1) {
