@@ -548,13 +548,14 @@ void connectionInfo::handlePairSeup() {
                 chacha20_setup(&chacha20, (const uint8_t *)sessionKey, 32, (uint8_t *)"PS-Msg05");
                 
                 //Ploy1305 key
-                char temp[64];  bzero(temp, 64); char temp2[64];  bzero(temp2, 64);
+                char temp[64] = {0}; char temp2[64] = {0};
                 chacha20_encrypt(&chacha20, (const uint8_t*)temp, (uint8_t *)temp2, 64);
                 
-                char verify[16];  bzero(verify, 16);
+                char verify[16] = {0};
                 Poly1305_GenKey((const unsigned char*)temp2, (unsigned char *)encryptedData, packageLen - 16, Type_Data_Without_Length, verify);
                 
-                char *decryptedData = new char[packageLen-16];
+                vector<char> decryptedData_vec(packageLen-16);
+                char *decryptedData = &decryptedData_vec[0];
                 bzero(decryptedData, packageLen-16);
                 chacha20_decrypt(&chacha20, (const uint8_t *)encryptedData, (uint8_t *)decryptedData, packageLen-16);
                 
@@ -1113,6 +1114,11 @@ PHKNetworkMessageData & PHKNetworkMessageData::operator=(const PHKNetworkMessage
     for (int i = 0; i < 10; i++) {
         if (data.records[i].length) {
             records[i] = data.records[i];
+
+            if(records[i].length)
+            {
+                delete [] records[i].data;
+            }
             records[i].data = new char[records[i].length];
             bcopy(data.records[i].data, records[i].data, data.records[i].length);
         }

@@ -60,6 +60,11 @@ int main(int argc, const char * argv[]) {
 #if PowerOnTest==1
     printf("poweron: %d\n", poly1305_power_on_self_test());
 #endif
+
+#ifdef _WIN32
+	WSADATA wsaData;
+	WSAStartup(2 , &wsaData);
+#endif
     
     // insert code here...
     if (argc > 1) {
