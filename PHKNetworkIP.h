@@ -118,6 +118,7 @@ public:
 	{
 		this->count = 0;
 	}
+
     PHKNetworkMessageData(const char *rawData, unsigned short len);
     PHKNetworkMessageData(const PHKNetworkMessageData &data);
     PHKNetworkMessageData &operator=(const PHKNetworkMessageData &);

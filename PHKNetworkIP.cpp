@@ -188,6 +188,9 @@ void updateConfiguration() {
 }
 
 void PHKNetworkIP::setupSocket() {
+#if HomeKitLog == 1
+        g_homekit_logger("PHKNetworkIP::setupSocket\n");
+#endif
     TXTRecordRef txtRecord = buildTXTRecord();
     _socket_v4 = setupSocketV4(5);
 
@@ -327,7 +330,9 @@ void *connectionLoop(void *threadInfo) {
         info->subSocket = -1;
         
     }
-    return NULL;
+
+	pthread_detach(info->thread);
+	return NULL;
 }
 
 void PHKNetworkIP::closeAcceptConnection(){
@@ -528,7 +533,14 @@ void connectionInfo::handlePairSeup() {
                 const char salt[] = "Pair-Setup-Encrypt-Salt";
                 const char info[] = "Pair-Setup-Encrypt-Info";
                 int i = hkdf((const unsigned char*)salt, strlen(salt), (const unsigned char*)secretKey->data, secretKey->length, (const unsigned char*)info, strlen(info), (uint8_t*)sessionKey, 32);
-                if (i != 0) return;
+                if (i != 0)
+				{
+#if HomeKitLog == 1
+                    g_homekit_logger("hkdf result zero\n");
+#endif
+				    SRP_free(srp);
+					return;
+				}
             }
                 break;
             case State_M5_ExchangeRequest: {
@@ -548,13 +560,13 @@ void connectionInfo::handlePairSeup() {
                 chacha20_setup(&chacha20, (const uint8_t *)sessionKey, 32, (uint8_t *)"PS-Msg05");
                 
                 //Ploy1305 key
-                char temp[64] = {0}; char temp2[64] = {0};
+				char temp[64] = {0}; char temp2[64] = {0};
                 chacha20_encrypt(&chacha20, (const uint8_t*)temp, (uint8_t *)temp2, 64);
                 
-                char verify[16] = {0};
+				char verify[16] = {0};
                 Poly1305_GenKey((const unsigned char*)temp2, (unsigned char *)encryptedData, packageLen - 16, Type_Data_Without_Length, verify);
                 
-                vector<char> decryptedData_vec(packageLen-16);
+				vector<char> decryptedData_vec(packageLen-16);
                 char *decryptedData = &decryptedData_vec[0];
                 bzero(decryptedData, packageLen-16);
                 chacha20_decrypt(&chacha20, (const uint8_t *)encryptedData, (uint8_t *)decryptedData, packageLen-16);
@@ -603,7 +615,15 @@ void connectionInfo::handlePairSeup() {
                     const char salt[] = "Pair-Setup-Controller-Sign-Salt";
                     const char info[] = "Pair-Setup-Controller-Sign-Info";
                     int i = hkdf((const unsigned char*)salt, strlen(salt), (const unsigned char*)secretKey->data, secretKey->length, (const unsigned char*)info, strlen(info), (uint8_t*)controllerHash, 32);
-                    if (i != 0) return;
+                    if (i != 0)
+					{
+#if HomeKitLog == 1
+	                    g_homekit_logger("hkdf result zero (2)\n");
+#endif
+	                    delete subTLV8;
+					    SRP_free(srp);
+						return;
+					}
                     
                     bcopy(controllerIdentifier, &controllerHash[32], 36);
                     bcopy(controllerPublicKey, &controllerHash[68], 32);
@@ -611,7 +631,14 @@ void connectionInfo::handlePairSeup() {
                     int ed25519_err = ed25519_sign_open((const unsigned char*)controllerHash, 100, (const unsigned char*)controllerPublicKey, (const unsigned char*)controllerSignature);
                     delete subTLV8;
                     
-                    if (ed25519_err) return;
+                    if (ed25519_err)
+					{
+#if HomeKitLog == 1
+	                    g_homekit_logger("ed25519_sign_open error %d\n",ed25519_err);
+#endif
+					    SRP_free(srp);
+						return;
+					}
                     else {
                         PHKNetworkMessageData *returnTLV8 = new PHKNetworkMessageData();
                         
@@ -667,10 +694,12 @@ void connectionInfo::handlePairSeup() {
 							char buffer[64] = {0}, key[64];
                             chacha20_encrypt(&ctx, (const uint8_t *)buffer, (uint8_t *)key, 64);
                             chacha20_encrypt(&ctx, (const uint8_t *)tlv8Data, (uint8_t *)tlv8Record.data, tlv8Len);
+							delete [] tlv8Data;
                             
 							char verify[16] = {0};
                             Poly1305_GenKey((const unsigned char *)key, (unsigned char*)tlv8Record.data, tlv8Len, Type_Data_Without_Length, verify);
                             memcpy((unsigned char *)&tlv8Record.data[tlv8Len], verify, 16);
+
                         }
                         
                         tlv8Record.activate = true; tlv8Record.index = 5;
@@ -689,6 +718,7 @@ void connectionInfo::handlePairSeup() {
                 }
                 
                 delete []encryptedData;
+			    SRP_free(srp);
                 
                 return;
             }
@@ -1019,10 +1049,11 @@ void connectionInfo::handleAccessoryRequest() {
 
 //Object Logic
 PHKNetworkIP::~PHKNetworkIP() {
-    DNSServiceRefDeallocate(netServiceV4);
+	closeAcceptConnection();
+	DNSServiceRefDeallocate(netServiceV4);
 
 	for (int i = 0; i < numberOfClient; i++) {
-		if ( connection[i].connected )
+		if ( connection[i].subSocket >= 0 )
 		{
 			pthread_join(connection[i].thread,NULL);
 		}
@@ -1115,10 +1146,10 @@ PHKNetworkMessageData & PHKNetworkMessageData::operator=(const PHKNetworkMessage
         if (data.records[i].length) {
             records[i] = data.records[i];
 
-            if(records[i].length)
-            {
-                delete [] records[i].data;
-            }
+			if(records[i].length)
+			{
+				delete [] records[i].data;
+			}
             records[i].data = new char[records[i].length];
             bcopy(data.records[i].data, records[i].data, data.records[i].length);
         }

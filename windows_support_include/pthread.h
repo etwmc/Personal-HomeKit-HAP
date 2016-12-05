@@ -41,16 +41,25 @@ struct _threadcallback{
 
 typedef HANDLE pthread_t;
 typedef void* pthread_attr_t;
-static void pthread_create(pthread_t* thread, const pthread_attr_t *attr_null,void *(*start_routine) (void *), void *arg)
+static int pthread_create(pthread_t* thread, const pthread_attr_t *attr_null,void *(*start_routine) (void *), void *arg)
 {
 	_threadcallback* c = new _threadcallback;
 	c->start_routine = start_routine;
 	c->arg = arg;
 	
 	*thread = (HANDLE)_beginthreadex(NULL , 0 , _threadcallback::call , (void*)c ,  0 ,NULL );
+	return 1;
 }
 
-static void pthread_join(pthread_t thread,void * nazo)
+static int pthread_join(pthread_t thread,void * nazo)
 {
 	::WaitForSingleObject( thread , INFINITE);
+	::CloseHandle(thread);
+	return 1;
+}
+
+static int pthread_detach(pthread_t thread)
+{
+	::CloseHandle(thread);
+	return 1;
 }

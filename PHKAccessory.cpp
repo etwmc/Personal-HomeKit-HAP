@@ -7,7 +7,6 @@
 //
 
 #include "PHKAccessory.h"
-#include "Configuration.h"
 
 
 const char hapJsonType[] = "application/hap+json";
@@ -334,32 +333,7 @@ struct broadcastInfo {
     char *desc;
 };
 
-void *announce(void *info) {
-    broadcastInfo *_info = (broadcastInfo *)info;
-    void *sender = _info->sender;
-    char *desc = _info->desc;
 
-	
-	vector<char> reply_vec(1024);
-    char *reply = &reply_vec[0];
-    int len = snprintf(reply, 1024, "EVENT/1.0 200 OK\r\nContent-Type: application/hap+json\r\nContent-Length: %lu\r\n\r\n%s", strlen(desc), desc);
-    
-#if HomeKitLog == 1 && HomeKitReplyHeaderLog==1
-    g_homekit_logger("%s\n", reply);
-#endif
-    
-	//Use the /identify message.
-	// /Identify - -> write 204 (subSocket)
-	//I will use the fix of zyanlu. Thank you.
-	//
-	//broadcastMessage(sender, reply, len);
-	//
-
-    delete [] desc;
-    delete [] info;
-
-	return NULL;
-}
 
 void handleAccessory(const char *request, unsigned int requestLen, char **reply, unsigned int *replyLen, connectionInfo *sender) {
 #if HomeKitLog == 1
@@ -581,14 +555,6 @@ void handleAccessory(const char *request, unsigned int requestLen, char **reply,
                         } else {
                             if (c->writable()) {
                                 c->setValue(value);
-                                
-                                char *broadcastTemp = new char[1024];
-                                snprintf(broadcastTemp, 1024, "{\"characteristics\":[{%s}]}", buffer1);
-                                broadcastInfo * info = new broadcastInfo;
-                                info->sender = c;
-                                info->desc = broadcastTemp;
-                                pthread_t thread;
-                                pthread_create(&thread, NULL, announce, info);
                                 
                                 statusCode = 204;
                                 
