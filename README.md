@@ -1,6 +1,8 @@
 #PersonalHomeKit
 This is a dymanic version (runtime add/remove accessories/services). For static version(MCU version), switch to the static branch
 Now support multiple characteristic, notify function
+
+Want to turn off the lights when everyone is out? How about closing the gas valve? Introduing a derived project: WiFi-Radar. No apps needed, no GPS tracing. All you need is a Wi-Fi network and a *nix running system https://github.com/etwmc/WiFi-RadarHAP
 ---------------
 Reset
 In iOS 9.0 Beta 1, Apple has implemented the check of status flag: a integer display where an accessory should be discoverable. And for any accessory that has paired, the flag should be 0. 
