@@ -17,7 +17,11 @@
 #define _manufactuerName "ET Chan"   //Manufactuer
 #define devicePassword "523-12-643" //Password
 #define deviceUUID "62F47751-8F26-46BF-9552-8F4238E67D60"   //UUID, for pair verify
+#ifdef _WIN32
+#define controllerRecordsAddress "PHK_controller" //Where to store the client keys
+#else
 #define controllerRecordsAddress "/var/PHK_controller" //Where to store the client keys
+#endif
 
 //Number of client
 /*
@@ -38,6 +42,12 @@
 
 #include <openssl/sha.h>
 #include <stdint.h>
+
+#ifdef WIN32
+#include <process.h>
+#include <io.h>
+#else
+#endif
 #include <unistd.h>
 
 typedef SHA512_CTX SHACTX;

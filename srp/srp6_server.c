@@ -258,6 +258,7 @@ srp6_server_key(SRP * srp, cstr ** result,
   cstr * s;
   BigInteger t1, t2, t3;
   SHACTX ctxt;
+  SHACTX sctx;
   unsigned char dig[SHA_DIGESTSIZE];
   int modlen;
 
@@ -331,7 +332,6 @@ srp6_server_key(SRP * srp, cstr ** result,
   BigIntegerClearFree(t3);
 
   /* convert srp->key into session key, update hashes */
-    SHACTX sctx;
     BigIntegerToCstr(srp->key, s);
     SHAInit(&sctx);
     SHAUpdate(&sctx, s->data, s->length);

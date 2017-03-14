@@ -7,10 +7,19 @@
 //
 //
 
-#include <stdio.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <dns_sd.h>
+#ifdef _WIN32
+	#include <Ws2tcpip.h>
+	#include <stdio.h>
+	#include <stdlib.h>
+	#include <time.h>
+	#include <pthread.h>
+#else
+	#include <stdio.h>
+	#include <sys/socket.h>
+	#include <netinet/in.h>
+#endif
+
+#include <dns_sd.h>  // linux->avahi  windows->bonjoursdk
 #include <cstring>
 #include <string>
 
@@ -68,30 +77,48 @@ typedef enum
 void broadcastMessage(void *sender, char *resultData, size_t resultLen);
 
 class PHKNetworkIP {
+
     void setupSocket();
     void handlePairSeup(int subSocket, char *buffer) const;
     void handlePairVerify(int subSocket, char *buffer) const;
+
 public:
-    PHKNetworkIP();
+	PHKNetworkIP(const string& name
+		,const string& pinCode
+		,const string& identity
+		,const string& controllerRecordsPath);
     void handleConnection() const;
     ~PHKNetworkIP();
+
+    void closeAcceptConnection();
 };
 
 class PHKNetworkMessageDataRecord {
 public:
-    unsigned char index = 0;
-    char *data = 0;
-    unsigned int length = 0;
-    bool activate = false;
+    unsigned char index;
+    char *data;
+    unsigned int length;
+    bool activate;
+	PHKNetworkMessageDataRecord()
+		: index(0)
+		, data(0)
+		, length(0)
+		, activate(false)
+	{
+	}
     ~PHKNetworkMessageDataRecord();
     PHKNetworkMessageDataRecord &operator=(const PHKNetworkMessageDataRecord&);
 };
 
 class PHKNetworkMessageData {
     PHKNetworkMessageDataRecord records[10];
-    unsigned char count = 0;
+    unsigned char count;
 public:
-    PHKNetworkMessageData() {}
+    PHKNetworkMessageData()
+	{
+		this->count = 0;
+	}
+
     PHKNetworkMessageData(const char *rawData, unsigned short len);
     PHKNetworkMessageData(const PHKNetworkMessageData &data);
     PHKNetworkMessageData &operator=(const PHKNetworkMessageData &);
@@ -127,20 +154,36 @@ public:
     pthread_t thread;
     pthread_mutex_t mutex;
 
-    bool connected = false;
+    bool connected;
 
     uint8_t controllerToAccessoryKey[32];
     uint8_t accessoryToControllerKey[32];
-    unsigned long long numberOfMsgRec = 0;
-    unsigned long long numberOfMsgSend = 0;
-    int subSocket = -1;
-    char buffer[4096];
+    unsigned long long numberOfMsgRec;
+    unsigned long long numberOfMsgSend;
+    int subSocket;
+    char buffer[4096+1];
 
     void *notificationList[numberOfNotifiableValue];
 
     void handlePairSeup();
     void handlePairVerify();
     void handleAccessoryRequest();
+
+	connectionInfo()
+	{
+		init();
+ 	}
+	void init()
+	{
+		subSocket = (-1);
+		numberOfMsgRec = (0);
+		numberOfMsgSend = (0);
+		connected = (false);
+		memset(buffer,0,4096+1);
+		memset(notificationList,0,sizeof(void*)*numberOfNotifiableValue);
+		memset(controllerToAccessoryKey,0,sizeof(uint8_t)*32);
+		memset(accessoryToControllerKey,0,sizeof(uint8_t)*32);
+	}
 
     void Poly1305_GenKey(const unsigned char * key, uint8_t * buf, uint16_t len, Poly1305Type_t type, char* verify);
 
@@ -175,3 +218,6 @@ public:
 };
 
 void updateConfiguration();
+
+//remove all controller pairing
+void resetControllerAll();

@@ -37,11 +37,12 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-#include <sys/time.h>
 
 #ifdef WIN32
 #include <process.h>
 #include <io.h>
+#else
+#include <sys/time.h>
 #endif
 
 #include "t_sha.h"
@@ -78,7 +79,10 @@ SHACTX randctxt;
  * tricks with variable ordering and sometimes define quirky
  * environment variables like $WINDOWID or $_.
  */
+#ifdef _WIN32
+#else
 extern char ** environ;
+#endif
 
 static void
 t_envhash(out)

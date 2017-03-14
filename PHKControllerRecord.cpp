@@ -6,11 +6,8 @@
 //
 //
 
-#include "PHKControllerRecord.h"
-#include "Configuration.h"
 #include <vector>
 #include <strings.h>
-
 
 #if MCU
 #else
@@ -19,19 +16,22 @@
 
 using namespace std;
 
-vector<PHKKeyRecord>readIn();
 
-vector<PHKKeyRecord>controllerRecords = readIn();
+#include "PHKControllerRecord.h"
+#include "Configuration.h"
 
-vector<PHKKeyRecord>readIn() {
+
+
+
+
+void ControllerRecord::loadController() {
     ifstream fs;
 #if MCU
 #else
-    fs.open(controllerRecordsAddress, std::ifstream::in);
+    fs.open(this->storeFilePath.c_str(), std::ifstream::in);
 #endif
 
-    char buffer[70];
-    bzero(buffer, 70);
+	char buffer[70] = {0};
 
     PHKKeyRecord record;
     vector<PHKKeyRecord> results;
@@ -50,62 +50,67 @@ vector<PHKKeyRecord>readIn() {
 #else
     fs.close();
 #endif
-
-    return results;
+	this->controllerRecords = results;
 }
 
-void resetControllerRecord() {
+void ControllerRecord::resetController() {
+	unlink(this->storeFilePath.c_str() );
+	this->controllerRecords.clear();
+}
+
+bool ControllerRecord::hasController() {
+    return this->controllerRecords.size() > 0;
+}
+
+void ControllerRecord::storeFiles()
+{
+#if MCU
+#else
     ofstream fs;
-    fs.open(controllerRecordsAddress, std::ofstream::out|std::ofstream::trunc);
+    fs.open(this->storeFilePath.c_str(), std::ofstream::trunc);
+#endif
+
+    for (vector<PHKKeyRecord>::iterator it = this->controllerRecords.begin(); it != this->controllerRecords.end(); it++) {
+#if MCU
+#else
+        fs.write(it->controllerID, 36);
+        fs.write(it->publicKey, 32);
+#endif
+    }
+    fs.close();
 }
 
-bool hasController() {
-    return controllerRecords.size() > 0;
-}
 
-void addControllerKey(PHKKeyRecord record) {
+void ControllerRecord::addControllerKey(PHKKeyRecord record) {
     if (doControllerKeyExist(record) == false) {
-        controllerRecords.push_back(record);
-
-#if MCU
-#else
-        ofstream fs;
-        fs.open(controllerRecordsAddress, std::ofstream::trunc);
-#endif
-
-        for (vector<PHKKeyRecord>::iterator it = controllerRecords.begin(); it != controllerRecords.end(); it++) {
-#if MCU
-#else
-            fs.write(it->controllerID, 36);
-            fs.write(it->publicKey, 32);
-#endif
-        }
-        fs.close();
-
+        this->controllerRecords.push_back(record);
+		storeFiles();
     }
 }
 
-bool doControllerKeyExist(PHKKeyRecord record) {
-    for (vector<PHKKeyRecord>::iterator it = controllerRecords.begin(); it != controllerRecords.end(); it++) {
+bool ControllerRecord::doControllerKeyExist(PHKKeyRecord record) {
+    for (vector<PHKKeyRecord>::iterator it = this->controllerRecords.begin(); it != this->controllerRecords.end(); it++) {
         if (bcmp((*it).controllerID, record.controllerID, 32) == 0) return true;
     }
     return false;
 }
 
-void removeControllerKey(PHKKeyRecord record) {
-    for (vector<PHKKeyRecord>::iterator it = controllerRecords.begin(); it != controllerRecords.end(); it++) {
+void ControllerRecord::removeControllerKey(PHKKeyRecord record) {
+    for (vector<PHKKeyRecord>::iterator it = this->controllerRecords.begin(); it != this->controllerRecords.end(); it++) {
         if (bcmp((*it).controllerID, record.controllerID, 32) == 0) {
-            controllerRecords.push_back(record);
+            this->controllerRecords.erase(it);
+			storeFiles();
             return;
         }
     }
 }
 
-PHKKeyRecord getControllerKey(char key[32]) {
-    for (vector<PHKKeyRecord>::iterator it = controllerRecords.begin(); it != controllerRecords.end(); it++) {
+PHKKeyRecord ControllerRecord::getControllerKey(char key[32]) {
+    for (vector<PHKKeyRecord>::iterator it = this->controllerRecords.begin(); it != this->controllerRecords.end(); it++) {
         if (bcmp(key, it->controllerID, 32) == 0) return *it;
     }
     PHKKeyRecord emptyRecord;
     bzero(emptyRecord.controllerID, 32);
     return emptyRecord;
 }
+

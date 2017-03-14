@@ -7,11 +7,14 @@
 //
 
 #include "PHKAccessory.h"
-#include "Configuration.h"
 
 
 const char hapJsonType[] = "application/hap+json";
 const char pairingTlv8Type[] = "application/pairing+tlv8";
+
+//The default logger is printf
+//Personal_homekit_set_logger_function can be changed.
+PERSONAL_LOGGER_FUNCTION g_homekit_logger = printf;
 
 
 //Wrap to JSON
@@ -34,12 +37,12 @@ inline string attribute(unsigned short type, unsigned short acclaim, int p, bool
     result += "]";
     result += ",";
     
-    char tempStr[4];
-    snprintf(tempStr, 4, "%X", type);
+    char tempStr[9];
+    snprintf(tempStr, 9, "%X", type);
     result += wrap("type")+":"+wrap(tempStr);
     result += ",";
     
-    snprintf(tempStr, 4, "%hd", acclaim);
+    snprintf(tempStr, 9, "%hd", acclaim);
     result += wrap("iid")+":"+tempStr;
     result += ",";
     
@@ -47,26 +50,26 @@ inline string attribute(unsigned short type, unsigned short acclaim, int p, bool
     
     return "{"+result+"}";
 }
-inline string attribute(unsigned short type, unsigned short acclaim, int p, int value, int minVal, int maxVal, int step, unit valueUnit) {
+inline string attribute(unsigned short type, unsigned short acclaim, int p, int value, int minVal, int maxVal, int step, unit valueUnit,const std::string& format ) {
     string result;
-    char tempStr[4];
+    char tempStr[9];
     
-    snprintf(tempStr, 4, "%d", value);
+    snprintf(tempStr, 9, "%d", value);
     
     if (p & premission_read) {
         result += wrap("value")+":"+tempStr;
         result += ",";
     }
     
-    snprintf(tempStr, 4, "%d", minVal);
+    snprintf(tempStr, 9, "%d", minVal);
     if (minVal != INT32_MIN)
         result += wrap("minValue")+":"+tempStr+",";
     
-    snprintf(tempStr, 4, "%d", maxVal);
+    snprintf(tempStr, 9, "%d", maxVal);
     if (maxVal != INT32_MAX)
         result += wrap("maxValue")+":"+tempStr+",";
     
-    snprintf(tempStr, 4, "%d", step);
+    snprintf(tempStr, 9, "%d", step);
     if (step > 0)
         result += wrap("minStep")+":"+tempStr+",";
     
@@ -79,11 +82,11 @@ inline string attribute(unsigned short type, unsigned short acclaim, int p, int 
     result += "]";
     result += ",";
     
-    snprintf(tempStr, 4, "%X", type);
+    snprintf(tempStr, 9, "%X", type);
     result += wrap("type")+":"+wrap(tempStr);
     result += ",";
     
-    snprintf(tempStr, 4, "%hd", acclaim);
+    snprintf(tempStr, 9, "%hd", acclaim);
     result += wrap("iid")+":"+tempStr;
     result += ",";
     
@@ -99,30 +102,30 @@ inline string attribute(unsigned short type, unsigned short acclaim, int p, int 
             break;
     }
     
-    result += "\"format\":\"int\"";
+    result += "\"format\":\"" + format + "\"";
     
     return "{"+result+"}";
 }
 inline string attribute(unsigned short type, unsigned short acclaim, int p, float value, float minVal, float maxVal, float step, unit valueUnit) {
     string result;
-    char tempStr[4];
+    char tempStr[9];
     
-    snprintf(tempStr, 4, "%f", value);
+    snprintf(tempStr, 9, "%f", value);
     
     if (p & premission_read) {
         result += wrap("value")+":"+tempStr;
         result += ",";
     }
     
-    snprintf(tempStr, 4, "%f", minVal);
+    snprintf(tempStr, 9, "%f", minVal);
     if (minVal != INT32_MIN)
         result += wrap("minValue")+":"+tempStr+",";
     
-    snprintf(tempStr, 4, "%f", maxVal);
+    snprintf(tempStr, 9, "%f", maxVal);
     if (maxVal != INT32_MAX)
         result += wrap("maxValue")+":"+tempStr+",";
     
-    snprintf(tempStr, 4, "%f", step);
+    snprintf(tempStr, 9, "%f", step);
     if (step > 0)
         result += wrap("minStep")+":"+tempStr+",";
     
@@ -135,11 +138,11 @@ inline string attribute(unsigned short type, unsigned short acclaim, int p, floa
     result += "]";
     result += ",";
     
-    snprintf(tempStr, 4, "%X", type);
+    snprintf(tempStr, 9, "%X", type);
     result += wrap("type")+":"+wrap(tempStr);
     result += ",";
     
-    snprintf(tempStr, 4, "%hd", acclaim);
+    snprintf(tempStr, 9, "%hd", acclaim);
     result += wrap("iid")+":"+tempStr;
     result += ",";
     
@@ -161,7 +164,7 @@ inline string attribute(unsigned short type, unsigned short acclaim, int p, floa
 }
 inline string attribute(unsigned short type, unsigned short acclaim, int p, string value, unsigned short len) {
     string result;
-    char tempStr[4];
+    char tempStr[9];
     
     if (p & premission_read) {
         result += wrap("value")+":"+wrap(value.c_str());
@@ -177,16 +180,16 @@ inline string attribute(unsigned short type, unsigned short acclaim, int p, stri
     result += "]";
     result += ",";
     
-    snprintf(tempStr, 4, "%X", type);
+    snprintf(tempStr, 9, "%X", type);
     result += wrap("type")+":"+wrap(tempStr);
     result += ",";
     
-    snprintf(tempStr, 4, "%hd", acclaim);
+    snprintf(tempStr, 9, "%hd", acclaim);
     result += wrap("iid")+":"+tempStr;
     result += ",";
     
     if (len > 0) {
-        snprintf(tempStr, 4, "%hd", len);
+        snprintf(tempStr, 9, "%hd", len);
         result += wrap("maxLen")+":"+tempStr;
         result += ",";
     }
@@ -234,7 +237,11 @@ string floatCharacteristics::describe() {
 }
 
 string intCharacteristics::describe() {
-    return attribute(type, iid, premission, _value, _minVal, _maxVal, _step, _unit);
+    return attribute(type, iid, premission, _value, _minVal, _maxVal, _step, _unit, "int");
+}
+
+string uint8Characteristics::describe() {
+    return attribute(type, iid, premission, _value, _minVal, _maxVal, _step, _unit, "uint8");
 }
 
 string stringCharacteristics::describe() {
@@ -245,13 +252,13 @@ string Service::describe() {
     string keys[3] = {"iid", "type", "characteristics"};
     string values[3];
     {
-        char temp[8];
-        snprintf(temp, 8, "%d", serviceID);
+        char temp[9];
+        snprintf(temp, 9, "%d", serviceID);
         values[0] = temp;
     }
     {
-        char temp[8];
-        snprintf(temp, 8, "\"%X\"", uuid);
+        char temp[9];
+        snprintf(temp, 9, "\"%X\"", uuid);
         values[1] = temp;
     }
     {
@@ -272,8 +279,8 @@ string Accessory::describe() {
     
     {
         keys[0] = "aid";
-        char temp[8];
-        sprintf(temp, "%d", aid);
+        char temp[9];
+        snprintf(temp,9, "%d", aid);
         values[0] = temp;
     }
     
@@ -293,20 +300,36 @@ string Accessory::describe() {
     return result;
 }
 
+
+
+void AccessorySet::lock()
+{
+    pthread_mutex_lock(&this->accessoryMutex);
+}
+
+void AccessorySet::unlock()
+{
+    pthread_mutex_unlock(&this->accessoryMutex);
+}
+
+
 string AccessorySet::describe() {
     int numberOfAcc = numberOfAccessory();
-    string *desc = new string[numberOfAcc];
+	vector<string> desc_vec(numberOfAcc);
+    string *desc = &desc_vec[0];
     for (int i = 0; i < numberOfAcc; i++) {
         desc[i] = _accessories[i]->describe();
     }
     string result = arrayWrap(desc, numberOfAcc);
-    delete [] desc;
     string key = "accessories";
     result = dictionaryWrap(&key, &result, 1);
     return result;
 }
 
+
+
 struct broadcastInfo {
+    pthread_t thread;
     void *sender;
     char *desc;
 };
@@ -320,14 +343,18 @@ void *announce(void *info) {
     int len = snprintf(reply, 1024, "EVENT/1.0 200 OK\r\nContent-Type: application/hap+json\r\nContent-Length: %lu\r\n\r\n%s", strlen(desc), desc);
     
 #if HomeKitLog == 1 && HomeKitReplyHeaderLog==1
-    printf("%s\n", reply);
+    g_homekit_logger("%s\n", reply);
 #endif
+    pthread_t currentthread = _info->thread;
     
     broadcastMessage(sender, reply, len);
     delete [] reply;
     
     delete [] desc;
     delete [] info;
+
+    pthread_detach(currentthread);
+	return NULL;
 }
 
 void updateValueFromDeviceEnd(characteristics *c, int aid, int iid, string value) {
@@ -337,14 +364,13 @@ void updateValueFromDeviceEnd(characteristics *c, int aid, int iid, string value
     broadcastInfo * info = new broadcastInfo;
     info->sender = c;
     info->desc = broadcastTemp;
-    pthread_t thread;
-    pthread_create(&thread, NULL, announce, info);
+    pthread_create(&info->thread, NULL, announce, info);
     
 }
 
 void handleAccessory(const char *request, unsigned int requestLen, char **reply, unsigned int *replyLen, connectionInfo *sender) {
 #if HomeKitLog == 1
-    printf("Receive request: %s\n", request);
+    g_homekit_logger("Receive request: %s\n", request);
 #endif
     int index = 5;
     char method[5];
@@ -365,7 +391,7 @@ void handleAccessory(const char *request, unsigned int requestLen, char **reply,
     }
     path[i] = 0;
 #if HomeKitLog == 1
-    printf("Path: %s\n", path);
+    g_homekit_logger("Path: %s\n", path);
 #endif
     
     const char *dataPtr = request;
@@ -378,7 +404,7 @@ void handleAccessory(const char *request, unsigned int requestLen, char **reply,
     
     char *replyData = NULL;  unsigned short replyDataLen = 0;
     
-    int statusCode;
+    int statusCode = 0;
     
     const char *protocol = "HTTP/1.1";
     const char *returnType = hapJsonType;
@@ -386,7 +412,7 @@ void handleAccessory(const char *request, unsigned int requestLen, char **reply,
     if (strcmp(path, "/accessories") == 0) {
         //Publish the characterists of the accessories
 #if HomeKitLog == 1
-        printf("Ask for accessories info\n");
+        g_homekit_logger("Ask for accessories info\n");
 #endif
         statusCode = 200;
         string desc = AccessorySet::getInstance().describe();
@@ -397,16 +423,18 @@ void handleAccessory(const char *request, unsigned int requestLen, char **reply,
     } else if (strcmp(path, "/pairings") == 0) {
         PHKNetworkMessage msg(request);
         statusCode = 200;
-        printf("%d\n", *msg.data.dataPtrForIndex(0));
-        if (*msg.data.dataPtrForIndex(0) == 3) {
+#if HomeKitLog == 1
+        g_homekit_logger("%d\n", *msg.data.dataPtrForIndex(0));
+#endif
+		if (*msg.data.dataPtrForIndex(0) == 3) {
             //Pairing with new user
 #if HomeKitLog == 1
-            printf("Add new user\n");
+            g_homekit_logger("Add new user\n");
 #endif
             PHKKeyRecord controllerRec;
             bcopy(msg.data.dataPtrForIndex(3), controllerRec.publicKey, 32);
             bcopy(msg.data.dataPtrForIndex(1), controllerRec.controllerID, 36);
-            addControllerKey(controllerRec);
+			AccessorySet::getInstance().Controllers.addControllerKey(controllerRec);
             PHKNetworkMessageDataRecord drec;
             drec.activate = true; drec.data = new char[1]; *drec.data = 2;
             drec.index = 6; drec.length = 1;
@@ -417,11 +445,11 @@ void handleAccessory(const char *request, unsigned int requestLen, char **reply,
             statusCode = 200;
         } else {
 #if HomeKitLog == 1
-            printf("Delete user");
+            g_homekit_logger("Delete user");
 #endif
             PHKKeyRecord controllerRec;
             bcopy(msg.data.dataPtrForIndex(1), controllerRec.controllerID, 36);
-            removeControllerKey(controllerRec);
+			AccessorySet::getInstance().Controllers.removeControllerKey(controllerRec);
             PHKNetworkMessageDataRecord drec;
             drec.activate = true; drec.data = new char[1]; *drec.data = 2;
             drec.index = 6; drec.length = 1;
@@ -432,32 +460,39 @@ void handleAccessory(const char *request, unsigned int requestLen, char **reply,
             statusCode = 200;
         }
     } else if (strncmp(path, "/characteristics", 16) == 0){
-        pthread_mutex_lock(&AccessorySet::getInstance().accessoryMutex);
-        printf("Characteristics\n");
-        if (strncmp(method, "GET", 3) == 0) {
+		AccessorySetAutoLock autolock;
+#if HomeKitLog == 1
+        g_homekit_logger("Characteristics\n");
+#endif
+		if (strncmp(method, "GET", 3) == 0) {
             //Read characteristics
             int aid = 0;    int iid = 0;
             
-            char indexBuffer[1000];
-            sscanf(path, "/characteristics?id=%[^\n]", indexBuffer);
-            printf("Get characteristics %s with len %d\n", indexBuffer, strlen(indexBuffer));
-            
+			char indexBuffer[1000+1]={0};
+            sscanf(path, "/characteristics?id=%1000[^\n]", indexBuffer);
+#if HomeKitLog == 1
+            g_homekit_logger("Get characteristics %s with len %d\n", indexBuffer, strlen(indexBuffer));
+#endif            
             statusCode = 404;
             
             string result = "[";
             
             while (strlen(indexBuffer) > 0) {
                 
-                printf("Get characteristics %s with len %d\n", indexBuffer, strlen(indexBuffer));
-                
-                char temp[1000];
+#if HomeKitLog == 1
+                g_homekit_logger("Get characteristics %s with len %d\n", indexBuffer, strlen(indexBuffer));
+#endif                
+				char temp[1000+1]={0};
                 //Initial the temp
-                temp[0] = 0;
-                sscanf(indexBuffer, "%d.%d%[^\n]", &aid, &iid, temp);
-                printf("Get temp %s with len %d\n", temp, strlen(temp));
-                strncpy(indexBuffer, temp, 1000);
-                printf("Get characteristics %s with len %d\n", indexBuffer, strlen(indexBuffer));
-                //Trim comma
+                sscanf(indexBuffer, "%d.%d%1000[^\n]", &aid, &iid, temp);
+#if HomeKitLog == 1
+                g_homekit_logger("Get temp %s with len %d\n", temp, strlen(temp));
+#endif
+				strncpy(indexBuffer, temp, 1000);
+#if HomeKitLog == 1
+                g_homekit_logger("Get characteristics %s with len %d\n", indexBuffer, strlen(indexBuffer));
+#endif
+				//Trim comma
                 if (indexBuffer[0] == ',') {
                     indexBuffer[0] = '0';
                 }
@@ -467,11 +502,11 @@ void handleAccessory(const char *request, unsigned int requestLen, char **reply,
                     characteristics *c = a->characteristicsAtIndex(iid);
                     if (c != NULL) {
 #if HomeKitLog == 1
-                        printf("Ask for one characteristics: %d . %d\n", aid, iid);
+                        g_homekit_logger("Ask for one characteristics: %d . %d\n", aid, iid);
 #endif
-                        char c1[3], c2[3];
-                        sprintf(c1, "%d", aid);
-                        sprintf(c2, "%d", iid);
+                        char c1[9], c2[9];
+                        snprintf(c1,9, "%d", aid);
+                        snprintf(c2,9, "%d", iid);
                         string s[3] = {string(c1), string(c2), c->value()};
                         string k[3] = {"aid", "iid", "value"};
                         if (result.length() != 1) {
@@ -500,8 +535,8 @@ void handleAccessory(const char *request, unsigned int requestLen, char **reply,
         } else if (strncmp(method, "PUT", 3) == 0) {
             //Change characteristics
             
-            char characteristicsBuffer[1000];
-            sscanf(dataPtr, "{\"characteristics\":[{%[^]]s}", characteristicsBuffer);
+			char characteristicsBuffer[1000+1]={0};
+            sscanf(dataPtr, "{\"characteristics\":[{%1000[^]]}", characteristicsBuffer);
             
             char *buffer2 = characteristicsBuffer;
             while (strlen(buffer2) && statusCode != 400) {
@@ -510,15 +545,15 @@ void handleAccessory(const char *request, unsigned int requestLen, char **reply,
                 buffer1 = strtok_r(buffer2, "}", &buffer2);
                 if (*buffer2 != 0) buffer2+=2;
                 
-                int aid = 0;    int iid = 0; char value[16];
-                int result = sscanf(buffer1, "\"aid\":%d,\"iid\":%d,\"value\":%s", &aid, &iid, value);
+				int aid = 0;    int iid = 0; char value[16+1]={0};
+                int result = sscanf(buffer1, "\"aid\":%d,\"iid\":%d,\"value\":%16s", &aid, &iid, value);
                 if (result == 2) {
-                    sscanf(buffer1, "\"aid\":%d,\"iid\":%d,\"ev\":%s", &aid, &iid, value);
+                    sscanf(buffer1, "\"aid\":%d,\"iid\":%d,\"ev\":%16s", &aid, &iid, value);
                     updateNotify = true;
                 } else if (result == 0) {
-                    sscanf(buffer1, "\"remote\":true,\"value\":%[^,],\"aid\":%d,\"iid\":%d", value, &aid, &iid);
+                    sscanf(buffer1, "\"remote\":true,\"value\":%16[^,],\"aid\":%d,\"iid\":%d", value, &aid, &iid);
                     if (result == 2) {
-                        sscanf(buffer1, "\"remote\":true,\"aid\":%d,\"iid\":%d,\"ev\":%s", &aid, &iid, value);
+                        sscanf(buffer1, "\"remote\":true,\"aid\":%d,\"iid\":%d,\"ev\":%16s", &aid, &iid, value);
                         updateNotify = true;
                     }
                 }
@@ -531,7 +566,7 @@ void handleAccessory(const char *request, unsigned int requestLen, char **reply,
                     
                     if (updateNotify) {
 #if HomeKitLog == 1
-                        printf("Ask to notify one characteristics: %d . %d -> %s\n", aid, iid, value);
+                        g_homekit_logger("Ask to notify one characteristics: %d . %d -> %s\n", aid, iid, value);
 #endif
                         if (c==NULL) {
                             statusCode = 400;
@@ -546,7 +581,7 @@ void handleAccessory(const char *request, unsigned int requestLen, char **reply,
                         }
                     } else {
 #if HomeKitLog == 1
-                        printf("Ask to change one characteristics: %d . %d -> %s\n", aid, iid, value);
+                        g_homekit_logger("Ask to change one characteristics: %d . %d -> %s\n", aid, iid, value);
 #endif
                         if (c==NULL) {
                             statusCode = 400;
@@ -559,8 +594,7 @@ void handleAccessory(const char *request, unsigned int requestLen, char **reply,
                                 broadcastInfo * info = new broadcastInfo;
                                 info->sender = c;
                                 info->desc = broadcastTemp;
-                                pthread_t thread;
-                                pthread_create(&thread, NULL, announce, info);
+                                pthread_create(&info->thread, NULL, announce, info);
                                 
                                 statusCode = 204;
                                 
@@ -577,23 +611,23 @@ void handleAccessory(const char *request, unsigned int requestLen, char **reply,
         } else {
             return;
         }
-        pthread_mutex_unlock(&AccessorySet::getInstance().accessoryMutex);
     } else {
         //Error
 #if HomeKitLog == 1
-        printf("Ask for something I don't know\n");
+        g_homekit_logger("Ask for something I don't know\n");
+        g_homekit_logger("%s\n", request);
+        g_homekit_logger("%s", path);
 #endif
-        printf("%s\n", request);
-        printf("%s", path);
         statusCode = 404;
     }
     
     //Calculate the length of header
-    char * tmp = new char[256];
-    bzero(tmp, 256);
-    int len = snprintf(tmp, 256, "%s %d OK\r\nContent-Type: %s\r\nContent-Length: %u\r\n\r\n", protocol, statusCode, returnType, replyDataLen);
-    delete [] tmp;
-    
+	int len = 0;
+	{
+	    char tmp[256];
+		len = snprintf(tmp, 256, "%s %d OK\r\nContent-Type: %s\r\nContent-Length: %u\r\n\r\n", protocol, statusCode, returnType, replyDataLen);
+	}
+
     //replyLen should omit the '\0'.
     (*replyLen) = len+replyDataLen;
     //reply should add '\0', or the printf is incorrect
@@ -607,7 +641,7 @@ void handleAccessory(const char *request, unsigned int requestLen, char **reply,
     }
     
 #if HomeKitLog == 1 && HomeKitReplyHeaderLog==1
-    printf("Reply: %s\n", *reply);
+    g_homekit_logger("Reply: %s\n", *reply);
 #endif
     
 }
@@ -636,4 +670,9 @@ void addInfoServiceToAccessory(Accessory *acc, string accName, string manufactue
     identify->setValue("false");
     identify->valueChangeFunctionCall = identifyCallback;
     acc->addCharacteristics(infoService, identify);
+}
+
+void Personal_homekit_set_logger_function(PERSONAL_LOGGER_FUNCTION func)
+{
+    g_homekit_logger = func;
 }

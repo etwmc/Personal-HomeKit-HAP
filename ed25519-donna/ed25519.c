@@ -16,7 +16,6 @@
 
 #include "ed25519-donna.h"
 #include "ed25519.h"
-#include "ed25519-randombytes.h"
 #include "ed25519-hash.h"
 
 /*
@@ -148,3 +147,5 @@ ED25519_FN(curved25519_scalarmult_basepoint) (curved25519_key pk, const curved25
 	curve25519_contract(pk, yplusz);
 }
 
+//This does not work unless it is at the bottom because of the order of winsock used in windows openssl.
+#include "ed25519-randombytes.h"

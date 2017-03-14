@@ -1,5 +1,5 @@
 LINK = -lssl -lcrypto -ldl -lpthread
-CFLAG = -Os -s
+CFLAG = -Os -s -I/usr/local/ssl/include/ -I/usr/local/include/ -I/usr/local/include/avahi-compat-libdns_sd/
 CC = gcc
 CPP = g++
 PHK_LIBNAME=libphk
