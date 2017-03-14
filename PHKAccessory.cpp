@@ -328,6 +328,7 @@ void *announce(void *info) {
     
     delete [] desc;
     delete [] info;
+    return NULL;
 }
 
 void updateValueFromDeviceEnd(characteristics *c, int aid, int iid, string value) {
