@@ -211,39 +211,47 @@ typedef enum {
     unit_arcDegree
 } unit;
 
+class Accessory;
 
 class characteristics {
 public:
-    
-    const unsigned short type;
+    Accessory *accessory;
+    const unsigned int type;
     const int premission;
     int iid;
-    characteristics(unsigned short _type, int _premission): type(_type), premission(_premission) {}
-    virtual string value() = 0;
-    virtual void setValue(string str) = 0;
-    virtual string describe() = 0;
+    characteristics(unsigned int _type, int _premission): type(_type), premission(_premission) {}
+    virtual string value(connectionInfo *sender) = 0;
+    void setValue(string str) {
+        setValue(str, NULL);
+    }
+    virtual void setValue(string str, connectionInfo *sender) = 0;
+    virtual string describe(connectionInfo *sender) = 0;
+    string (*perUserQuery)(connectionInfo *sender) = 0;
     bool writable() { return premission&premission_write; }
     bool notifiable() { return premission&premission_notify; }
+    void notify();
 };
 
 //To store value of device state, subclass the following type
 class boolCharacteristics: public characteristics {
 public:
     bool _value;
-    void (*valueChangeFunctionCall)(bool oldValue, bool newValue) = NULL;
-    boolCharacteristics(unsigned short _type, int _premission): characteristics(_type, _premission) {}
-    virtual string value() {
+    void (*valueChangeFunctionCall)(bool oldValue, bool newValue, connectionInfo *sender) = NULL;
+    boolCharacteristics(unsigned int _type, int _premission): characteristics(_type, _premission) {}
+    virtual string value(connectionInfo *sender) {
+        if (perUserQuery != 0)
+            return perUserQuery(sender);
         if (_value)
             return "1";
         return "0";
     }
-    virtual void setValue(string str) {
-        bool newValue = (strncmp("true", str.c_str(), 4)==0);
+    virtual void setValue(string str, connectionInfo *sender) {
+        bool newValue = (strncmp("true", str.c_str(), 4)==0)||(strncmp("1", str.c_str(), 1)==0);
         if (valueChangeFunctionCall)
-            valueChangeFunctionCall(_value, newValue);
+            valueChangeFunctionCall(_value, newValue, sender);
         _value = newValue;
     }
-    virtual string describe();
+    virtual string describe(connectionInfo *sender);
 };
 
 class floatCharacteristics: public characteristics {
@@ -251,22 +259,24 @@ public:
     float _value;
     const float _minVal, _maxVal, _step;
     const unit _unit;
-    void (*valueChangeFunctionCall)(float oldValue, float newValue) = NULL;
-    floatCharacteristics(unsigned short _type, int _premission, float minVal, float maxVal, float step, unit charUnit): characteristics(_type, _premission), _minVal(minVal), _maxVal(maxVal), _step(step), _unit(charUnit) {}
-    virtual string value() {
+    void (*valueChangeFunctionCall)(float oldValue, float newValue, connectionInfo *sender) = NULL;
+    floatCharacteristics(unsigned int _type, int _premission, float minVal, float maxVal, float step, unit charUnit): characteristics(_type, _premission), _minVal(minVal), _maxVal(maxVal), _step(step), _unit(charUnit) {}
+    virtual string value(connectionInfo *sender) {
+        if (perUserQuery != 0)
+            return perUserQuery(sender);
         char temp[16];
         snprintf(temp, 16, "%f", _value);
         return temp;
     }
-    virtual void setValue(string str) {
+    virtual void setValue(string str, connectionInfo *sender) {
         float temp = atof(str.c_str());
         if (temp == temp) {
             if (valueChangeFunctionCall)
-                valueChangeFunctionCall(_value, temp);
+                valueChangeFunctionCall(_value, temp, sender);
             _value = temp;
         }
     }
-    virtual string describe();
+    virtual string describe(connectionInfo *sender);
 };
 
 class intCharacteristics: public characteristics {
@@ -274,41 +284,45 @@ public:
     int _value;
     const int _minVal, _maxVal, _step;
     const unit _unit;
-    void (*valueChangeFunctionCall)(int oldValue, int newValue) = NULL;
-    intCharacteristics(unsigned short _type, int _premission, int minVal, int maxVal, int step, unit charUnit): characteristics(_type, _premission), _minVal(minVal), _maxVal(maxVal), _step(step), _unit(charUnit) {
+    void (*valueChangeFunctionCall)(int oldValue, int newValue, connectionInfo *sender) = NULL;
+    intCharacteristics(unsigned int _type, int _premission, int minVal, int maxVal, int step, unit charUnit): characteristics(_type, _premission), _minVal(minVal), _maxVal(maxVal), _step(step), _unit(charUnit) {
         _value = minVal;
     }
-    virtual string value() {
+    virtual string value(connectionInfo *sender) {
+        if (perUserQuery != 0)
+            return perUserQuery(sender);
         char temp[16];
         snprintf(temp, 16, "%d", _value);
         return temp;
     }
-    virtual void setValue(string str) {
+    virtual void setValue(string str, connectionInfo *sender) {
         float temp = atoi(str.c_str());
         if (temp == temp) {
             if (valueChangeFunctionCall)
-                valueChangeFunctionCall(_value, temp);
+                valueChangeFunctionCall(_value, temp, sender);
             _value = temp;
         }
     }
-    virtual string describe();
+    virtual string describe(connectionInfo *sender);
 };
 
 class stringCharacteristics: public characteristics {
 public:
     string _value;
     const unsigned short maxLen;
-    void (*valueChangeFunctionCall)(string oldValue, string newValue) = NULL;
-    stringCharacteristics(unsigned short _type, int _premission, unsigned short _maxLen): characteristics(_type, _premission), maxLen(_maxLen) {}
-    virtual string value() {
+    void (*valueChangeFunctionCall)(string oldValue, string newValue, connectionInfo *sender) = NULL;
+    stringCharacteristics(unsigned int _type, int _premission, unsigned short _maxLen): characteristics(_type, _premission), maxLen(_maxLen) {}
+    virtual string value(connectionInfo *sender) {
+        if (perUserQuery != 0)
+            return "\""+perUserQuery(sender)+"\"";
         return "\""+_value+"\"";
     }
-    virtual void setValue(string str) {
+    virtual void setValue(string str, connectionInfo *sender) {
         if (valueChangeFunctionCall)
-            valueChangeFunctionCall(_value, str);
+            valueChangeFunctionCall(_value, str, sender);
         _value = str;
     }
-    virtual string describe();
+    virtual string describe(connectionInfo *sender);
 };
 
 //Abstract Layer of object
@@ -319,7 +333,7 @@ public:
     Service(int _uuid): uuid(_uuid) {}
     virtual short numberOfCharacteristics() { return _characteristics.size(); }
     virtual characteristics *characteristicsAtIndex(int index) { return _characteristics[index]; }
-    string describe();
+    string describe(connectionInfo *sender);
 };
 
 class Accessory {
@@ -333,6 +347,7 @@ public:
     }
     void addCharacteristics(Service *ser, characteristics *cha) {
         cha->iid = ++numberOfInstance;
+        cha->accessory = this;
         ser->_characteristics.push_back(cha);
     }
     bool removeService(Service *ser) {
@@ -377,7 +392,7 @@ public:
         }
         return NULL;
     }
-    string describe();
+    string describe(connectionInfo *sender);
 };
 
 class AccessorySet {
@@ -424,10 +439,10 @@ public:
     ~AccessorySet() {
         pthread_mutex_destroy(&accessoryMutex);
     }
-    string describe();
+    string describe(connectionInfo *sender);
 };
 
-typedef void (*identifyFunction)(bool oldValue, bool newValue);
+typedef void (*identifyFunction)(bool oldValue, bool newValue, connectionInfo *sender);
 
 //Since Info Service contains only constant, only add method will be provided
 void addInfoServiceToAccessory(Accessory *acc, string accName, string manufactuerName, string modelName, string serialNumber, identifyFunction identifyCallback);
@@ -435,3 +450,9 @@ void addInfoServiceToAccessory(Accessory *acc, string accName, string manufactue
 void handleAccessory(const char *request, unsigned int requestLen, char **reply, unsigned int *replyLen, connectionInfo *sender);
 
 void updateValueFromDeviceEnd(characteristics *c, int aid, int iid, string value);
+
+struct broadcastInfo {
+    void *sender;
+    char *desc;
+};
+void *announce(void *info);

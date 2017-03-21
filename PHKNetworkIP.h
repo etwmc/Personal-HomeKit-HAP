@@ -121,6 +121,7 @@ public:
     void getBinaryPtr(char **buffer, int *contentLength);
 };
 
+void updatePairable();
 
 class connectionInfo {
 public:
@@ -128,7 +129,11 @@ public:
     pthread_mutex_t mutex;
 
     bool connected = false;
+    bool relay = false;
 
+    char identity[37];
+    string hostname;
+    
     uint8_t controllerToAccessoryKey[32];
     uint8_t accessoryToControllerKey[32];
     unsigned long long numberOfMsgRec = 0;
@@ -144,11 +149,11 @@ public:
 
     void Poly1305_GenKey(const unsigned char * key, uint8_t * buf, uint16_t len, Poly1305Type_t type, char* verify);
 
-    void addNotify(void *target) {
+    void addNotify(void *target, int aid, int iid) {
         for (int i = 0; i < numberOfNotifiableValue; i++) {
             if (notificationList[i] == 0) {
                 notificationList[i] = target;
-                printf("Add notify %d\n", target);
+                printf("Add notify %s to %d.%d\n", identity, aid, iid);
                 return;
             }
         }
@@ -175,3 +180,6 @@ public:
 };
 
 void updateConfiguration();
+
+extern void (*newConnection)(connectionInfo* info);
+extern void (*deadConnection)(connectionInfo *info);

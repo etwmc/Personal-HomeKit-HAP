@@ -14,6 +14,11 @@
 #include <errno.h>
 #include <strings.h>
 
+#include <netdb.h>
+
+void (*newConnection)(connectionInfo* info) = 0;
+void (*deadConnection)(connectionInfo *info) = 0;
+
 //#include <byteswap.h>
 static inline unsigned short bswap_16(unsigned short x) {
 return (x>>8) | (x<<8);
@@ -63,6 +68,22 @@ using namespace std;
 #else
 connectionInfo connection[numberOfClient];
 #endif
+
+void *stayAliveTrigger(void *threadInfo) {
+    //For every 10 seconds, this thread will wake, and send a keep alive message
+    while (true) {
+        printf("Keep Alive");
+        broadcastInfo *alivePackage = new broadcastInfo;
+        alivePackage->sender = NULL;
+        char *aliveMsg = new char[32];
+        strncpy(aliveMsg, "{\"characteristics\": []}", 32);
+        alivePackage->desc = aliveMsg;
+        announce(alivePackage);
+        sleep(keepAlivePeriod);
+    }
+}
+
+pthread_t aliveThread;
 
 const unsigned char modulusStr[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xC9, 0x0F, 0xDA, 0xA2, 0x21, 0x68, 0xC2, 0x34, 0xC4, 0xC6, 0x62, 0x8B, 0x80, 0xDC, 0x1C, 0xD1, 0x29, 0x02, 0x4E, 0x08, 0x8A, 0x67, 0xCC, 0x74, 0x02, 0x0B, 0xBE, 0xA6, 0x3B, 0x13, 0x9B, 0x22, 0x51, 0x4A, 0x08, 0x79, 0x8E, 0x34, 0x04, 0xDD, 0xEF, 0x95, 0x19, 0xB3, 0xCD, 0x3A, 0x43, 0x1B, 0x30, 0x2B, 0x0A, 0x6D, 0xF2, 0x5F, 0x14, 0x37, 0x4F, 0xE1, 0x35, 0x6D, 0x6D, 0x51, 0xC2, 0x45, 0xE4, 0x85, 0xB5, 0x76, 0x62, 0x5E, 0x7E, 0xC6, 0xF4, 0x4C, 0x42, 0xE9, 0xA6, 0x37, 0xED, 0x6B, 0x0B, 0xFF, 0x5C, 0xB6, 0xF4, 0x06, 0xB7, 0xED, 0xEE, 0x38, 0x6B, 0xFB, 0x5A, 0x89, 0x9F, 0xA5, 0xAE, 0x9F, 0x24, 0x11, 0x7C, 0x4B, 0x1F, 0xE6, 0x49, 0x28, 0x66, 0x51, 0xEC, 0xE4, 0x5B, 0x3D, 0xC2, 0x00, 0x7C, 0xB8, 0xA1, 0x63, 0xBF, 0x05, 0x98, 0xDA, 0x48, 0x36, 0x1C, 0x55, 0xD3, 0x9A, 0x69, 0x16, 0x3F, 0xA8, 0xFD, 0x24, 0xCF, 0x5F, 0x83, 0x65, 0x5D, 0x23, 0xDC, 0xA3, 0xAD, 0x96, 0x1C, 0x62, 0xF3, 0x56, 0x20, 0x85, 0x52, 0xBB, 0x9E, 0xD5, 0x29, 0x07, 0x70, 0x96, 0x96, 0x6D, 0x67, 0x0C, 0x35, 0x4E, 0x4A, 0xBC, 0x98, 0x04, 0xF1, 0x74, 0x6C, 0x08, 0xCA, 0x18, 0x21, 0x7C, 0x32, 0x90, 0x5E, 0x46, 0x2E, 0x36, 0xCE, 0x3B, 0xE3, 0x9E, 0x77, 0x2C, 0x18, 0x0E, 0x86, 0x03, 0x9B, 0x27, 0x83, 0xA2, 0xEC, 0x07, 0xA2, 0x8F, 0xB5, 0xC5, 0x5D, 0xF0, 0x6F, 0x4C, 0x52, 0xC9, 0xDE, 0x2B, 0xCB, 0xF6, 0x95, 0x58, 0x17, 0x18, 0x39, 0x95, 0x49, 0x7C, 0xEA, 0x95, 0x6A, 0xE5, 0x15, 0xD2, 0x26, 0x18, 0x98, 0xFA, 0x05, 0x10, 0x15, 0x72, 0x8E, 0x5A, 0x8A, 0xAA, 0xC4, 0x2D, 0xAD, 0x33, 0x17, 0x0D, 0x04, 0x50, 0x7A, 0x33, 0xA8, 0x55, 0x21, 0xAB, 0xDF, 0x1C, 0xBA, 0x64, 0xEC, 0xFB, 0x85, 0x04, 0x58, 0xDB, 0xEF, 0x0A, 0x8A, 0xEA, 0x71, 0x57, 0x5D, 0x06, 0x0C, 0x7D, 0xB3, 0x97, 0x0F, 0x85, 0xA6, 0xE1, 0xE4, 0xC7, 0xAB, 0xF5, 0xAE, 0x8C, 0xDB, 0x09, 0x33, 0xD7, 0x1E, 0x8C, 0x94, 0xE0, 0x4A, 0x25, 0x61, 0x9D, 0xCE, 0xE3, 0xD2, 0x26, 0x1A, 0xD2, 0xEE, 0x6B, 0xF1, 0x2F, 0xFA, 0x06, 0xD9, 0x8A, 0x08, 0x64, 0xD8, 0x76, 0x02, 0x73, 0x3E, 0xC8, 0x6A, 0x64, 0x52, 0x1F, 0x2B, 0x18, 0x17, 0x7B, 0x20, 0x0C, 0xBB, 0xE1, 0x17, 0x57, 0x7A, 0x61, 0x5D, 0x6C, 0x77, 0x09, 0x88, 0xC0, 0xBA, 0xD9, 0x46, 0xE2, 0x08, 0xE2, 0x4F, 0xA0, 0x74, 0xE5, 0xAB, 0x31, 0x43, 0xDB, 0x5B, 0xFC, 0xE0, 0xFD, 0x10, 0x8E, 0x4B, 0x82, 0xD1, 0x20, 0xA9, 0x3A, 0xD2, 0xCA, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
 
@@ -151,6 +172,12 @@ TXTRecordRef buildTXTRecord() {
     return txtRecord;
 }
 
+void updatePairable() {
+    TXTRecordRef txtRecord = buildTXTRecord();
+    DNSServiceUpdateRecord(netServiceV4, NULL, 0, TXTRecordGetLength(&txtRecord), TXTRecordGetBytesPtr(&txtRecord), 0);
+    TXTRecordDeallocate(&txtRecord);
+}
+
 void updateConfiguration() {
     currentConfigurationNum++;
     TXTRecordRef txtRecord = buildTXTRecord();
@@ -171,19 +198,23 @@ PHKNetworkIP::PHKNetworkIP() {
     for (int i = 0; i < numberOfClient; i++) {
         connection[i].subSocket = -1;
     }
+    pthread_create(&aliveThread, NULL, stayAliveTrigger, NULL);
     setupSocket();
 }
 
-//Connection Logic, not finished
+//Broadcast a event message, use for notifcation or keep alive
 void broadcastMessage(void *sender, char *resultData, size_t resultLen) {
     
-#if HomeKitLog == 1
-    printf("Broadcast with sender\n");
-#endif
-    
     for (int i = 0; i < numberOfClient; i++) {
+
         int socketNumber = connection[i].subSocket;
-        if (socketNumber >= 0 && connection[i].notify(sender)) {
+        
+        if (socketNumber >= 0 && connection[i].connected && connection[i].numberOfMsgSend >= 0 && (connection[i].notify(sender) || sender == NULL ) ){
+            
+            
+#if HomeKitLog == 1
+            printf("Broadcast with sender a %d message to client %d\n", resultLen, socketNumber);
+#endif
             
             pthread_mutex_lock(&connection[i].mutex);
             
@@ -191,17 +222,22 @@ void broadcastMessage(void *sender, char *resultData, size_t resultLen) {
             
             char temp[64];  bzero(temp, 64); char temp2[64];  bzero(temp2, 64);
             
-            char *reply = new char[resultLen+18];
+            unsigned char *reply = new unsigned char[resultLen+18];
             reply[0] = resultLen%256;
             reply[1] = (resultLen-(uint8_t)reply[0])/256;
             
-            chacha20_setup(&chacha20, (const uint8_t *)connection[i].accessoryToControllerKey, 32, (uint8_t *)&connection[i].numberOfMsgSend);
+            unsigned long long numberOfMsgSend = connection[i].numberOfMsgSend;
+            if (!is_big_endian()) numberOfMsgSend = bswap_64(connection[i].numberOfMsgSend);
+            chacha20_setup(&chacha20, (const uint8_t *)connection[i].accessoryToControllerKey, 32, (uint8_t *)&numberOfMsgSend);
+            connection[i].numberOfMsgSend++;
+            
+            //chacha20_setup(&chacha20, (const uint8_t *)connection[i].accessoryToControllerKey, 32, (uint8_t *)&connection[i].numberOfMsgSend);
             //connection[i].numberOfMsgSend++;
             chacha20_encrypt(&chacha20, (const uint8_t*)temp, (uint8_t *)temp2, 64);
             chacha20_encrypt(&chacha20, (const uint8_t*)resultData, (uint8_t*)&reply[2], resultLen);
             
             //XXX FIXME
-#if 1
+#if 0
             poly1305_context verifyContext; bzero(&verifyContext, sizeof(verifyContext));
             poly1305_init(&verifyContext, (const unsigned char*)temp2);
             {
@@ -212,7 +248,10 @@ void broadcastMessage(void *sender, char *resultData, size_t resultLen) {
                 poly1305_update(&verifyContext, (const unsigned char *)waste, 14);
                 
                 poly1305_update(&verifyContext, (const unsigned char *)&reply[2], resultLen);
-                poly1305_update(&verifyContext, (const unsigned char *)waste, 16-resultLen%16);
+                if (resultLen%16 > 0)
+                    poly1305_update(&verifyContext, (const unsigned char *)waste, 16-(resultLen%16));
+                
+                //poly1305_update(&verifyContext, (const unsigned char *)waste, 16-resultLen%16);
                 unsigned long long _len;
                 _len = 2;
                 poly1305_update(&verifyContext, (const unsigned char *)&_len, 8);
@@ -223,7 +262,7 @@ void broadcastMessage(void *sender, char *resultData, size_t resultLen) {
 #else
             char verify[16];
             memset(verify, 0, 16);
-            Poly1305_GenKey((const unsigned char *)temp2, (uint8_t *)reply, resultLen, Type_Data_With_Length, verify);
+            connection[i].Poly1305_GenKey((const unsigned char *)temp2, (uint8_t *)reply, resultLen, Type_Data_With_Length, verify);
             memcpy((unsigned char*)&reply[resultLen+2], verify, 16);
 #endif
             
@@ -287,19 +326,31 @@ void *connectionLoop(void *threadInfo) {
 }
 
 void PHKNetworkIP::handleConnection() const {
-    int subSocket = accept(_socket_v4, 0, NULL);
+    struct sockaddr_in client_addr; socklen_t clen;
+    int subSocket = accept(_socket_v4, (struct sockaddr *)&client_addr, &clen);
+    
+    //Before anything start, get sniff the host name of the client
+    string socketName = "";
+    if (clen == sizeof(struct sockaddr_in)) {
+        char buffer[1024];
+        int res = getnameinfo((struct sockaddr *)&client_addr, clen, buffer, 1024, NULL, 0, NI_NOFQDN);
+        socketName = string(buffer);
+    }
     
     int index = -1;
     for (int i = 0; i < numberOfClient; i++) {
         if (connection[i].subSocket == -1) {
             index = i;
             connection[index].subSocket = subSocket;
+            connection[index].hostname = socketName;
             
             pthread_create(&connection[index].thread, NULL, connectionLoop, &connection[index]);
+            
             break;
         }
     }
     
+    //Too much connection?
     if (index < 0) close(subSocket);
     
 }
@@ -311,7 +362,6 @@ void PHKNetworkIP::handleConnection() const {
 //Passed-in buf is len and data_buf
 void connectionInfo::Poly1305_GenKey(const unsigned char * key, uint8_t * buf, uint16_t len, Poly1305Type_t type, char* verify)
 {
-    printf("Length: %d\n", buf[0]);
     if (key == NULL || buf == NULL || len < 2 || verify == NULL)
         return;
     
@@ -356,6 +406,7 @@ void connectionInfo::Poly1305_GenKey(const unsigned char * key, uint8_t * buf, u
 }
 
 void connectionInfo::handlePairSeup() {
+    identity[36] = 0;
     PHKNetworkMessageDataRecord stateRecord;
     stateRecord.activate = true;
     stateRecord.data = new char[1];
@@ -773,6 +824,7 @@ void connectionInfo::handlePairVerify() {
                     char tempMsg[100];
                     bcopy(controllerPublicKey, tempMsg, 32);
                     bcopy(data.dataPtrForIndex(1), &tempMsg[32], 36);
+                    bcopy(data.dataPtrForIndex(1), identity, 36);
                     bcopy(publicKey, &tempMsg[68], 32);
                     
                     int err = ed25519_sign_open((const unsigned char *)tempMsg, 100, (const unsigned char *)rec.publicKey, (const unsigned char *)data.dataPtrForIndex(10));
@@ -783,7 +835,6 @@ void connectionInfo::handlePairVerify() {
                         
                         hkdf((uint8_t *)"Control-Salt", 12, sharedKey, 32, (uint8_t *)"Control-Read-Encryption-Key", 27, accessoryToControllerKey, 32);
                         hkdf((uint8_t *)"Control-Salt", 12, sharedKey, 32, (uint8_t *)"Control-Write-Encryption-Key", 28, controllerToAccessoryKey, 32);
-                        
 #if HomeKitLog == 1
                         printf("Verify success\n");
 #endif
@@ -822,11 +873,12 @@ void connectionInfo::handlePairVerify() {
             delete [] repBuffer;
         }
     } while (!end && read(subSocket, buffer, 4096) > 0);
-    
 }
 
 void connectionInfo::handleAccessoryRequest() {
-    connected = true;
+    
+    //New connection has finish verify, so announce
+    newConnection(this);
     
     char *decryptData = new char[2048];
     
@@ -842,10 +894,13 @@ void connectionInfo::handleAccessoryRequest() {
     clearNotify();
     
     pthread_mutex_init(&mutex, NULL);
+    connected = true;
     
     do {
         bzero(buffer, 4096);
         len = read(subSocket, buffer, 4096);
+        
+        pthread_mutex_lock(&mutex);
         
         //FIXME make sure buffer len > (2 + msgLen + 16)??
         if (len > 0) {
@@ -853,9 +908,13 @@ void connectionInfo::handleAccessoryRequest() {
             
             chacha20_ctx chacha20;    bzero(&chacha20, sizeof(chacha20));
             
+#if HomeKitLog == 1
             printf("send: %llx\n", numberOfMsgRec);
+#endif
             if (!is_big_endian()) numberOfMsgRec = bswap_64(numberOfMsgRec);
+#if HomeKitLog == 1
             printf("send: %llx\n", numberOfMsgRec);
+#endif
             chacha20_setup(&chacha20, (const uint8_t *)controllerToAccessoryKey, 32, (uint8_t *)&numberOfMsgRec);
             if (!is_big_endian()) numberOfMsgRec = bswap_64(numberOfMsgRec);
             numberOfMsgRec++;
@@ -871,7 +930,9 @@ void connectionInfo::handleAccessoryRequest() {
             bzero(decryptData, 2048);
             chacha20_encrypt(&chacha20, (const uint8_t *)&buffer[2], (uint8_t *)decryptData, msgLen);
             
+#if HomeKitReplyHeaderLog == 1
             printf("Request: %s\nPacketLen: %d\n, MessageLen: %d\n", decryptData, len, strlen(decryptData));
+#endif
             
             if(len >= (2 + msgLen + 16)
                && memcmp((void *)verify, (void *)&buffer[2 + msgLen], 16) == 0) {
@@ -902,8 +963,6 @@ void connectionInfo::handleAccessoryRequest() {
                 continue;
             }
             
-            pthread_mutex_lock(&mutex);
-            
             //Output return
             char *resultData = 0; unsigned int resultLen = 0;
             handleAccessory(decryptData, msgLen, &resultData, &resultLen, this);
@@ -932,6 +991,8 @@ void connectionInfo::handleAccessoryRequest() {
             delete [] resultData;
         }
     } while (len > 0);
+    
+    if (deadConnection) deadConnection(this);
     
     pthread_mutex_destroy(&mutex);
     

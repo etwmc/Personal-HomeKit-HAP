@@ -6,47 +6,147 @@
 
 #include "PHKAccessory.h"
 
-//Global Level of light strength
-int lightStength = 0;
-int fanSpeedVal = 0;
+#include "PHKNetworkIP.h"
 
-void lightIdentify(bool oldValue, bool newValue) {
-    printf("Start Identify Light\n");
+#include <fstream>
+
+#include <set>
+
+using namespace std;
+
+pthread_mutex_t recordMutex;
+
+set <string> trackingUserList;
+set <connectionInfo*> activeUsers;
+
+intCharacteristics *occupyState;
+
+#define userListAddr "./userList"
+
+void _newConnection(connectionInfo* info) {
+    printf("New connection %s\n", info->hostname.c_str());
+    pthread_mutex_lock(&recordMutex);
+    
+    bool originalOutput = activeUsers.size() > 0;
+    if ( trackingUserList.count(info->hostname) > 0 )
+        activeUsers.insert(info);
+    
+    bool laterOutput = activeUsers.size() > 0;
+    
+    pthread_mutex_unlock(&recordMutex);
+    if (originalOutput != laterOutput) {
+        //Should notify
+        printf("Changed\n");
+        occupyState->notify();
+    }
 }
 
-void changeLightPower(bool oldValue, bool newValue) {
-    printf("New Light Power State\n");
+void _deadConnection(connectionInfo *info) {
+    pthread_mutex_lock(&recordMutex);
+    
+    bool originalOutput = activeUsers.size() > 0;
+    activeUsers.erase(info);
+    
+    bool laterOutput = activeUsers.size() > 0;
+    
+    pthread_mutex_unlock(&recordMutex);
+    if (originalOutput != laterOutput) {
+        //Should notify
+        printf("Changed\n");
+        occupyState->notify();
+    }
 }
 
-void changeLightIntensity(int oldValue, int newValue) {
-    printf("New Intensity\n");
+void loadUserList() {
+    ifstream fs;
+    fs.open(userListAddr, std::ifstream::in);
+    char buffer[256];
+    bool isEmpty = fs.peek() == EOF;
+    while (!isEmpty&&fs.is_open()&&fs.good()&&!fs.eof()) {
+        fs.getline(buffer, 256);
+        string s = string(buffer);
+        trackingUserList.insert(s);
+    }
+    fs.close();
+}
+
+void saveUserList() {
+    ofstream fs;
+    fs.open(userListAddr, std::ifstream::out);
+    for (set<string>::iterator it = trackingUserList.begin(); it != trackingUserList.end(); it++) {
+        fs << *it << "\n";
+    }
+    fs.close();
+}
+
+string trackable(connectionInfo *sender) {
+    pthread_mutex_lock(&recordMutex);
+    string result = trackingUserList.count(sender->hostname) > 0? "1": "0";
+    pthread_mutex_unlock(&recordMutex);
+    return result;
+}
+
+string calculateOccupy(connectionInfo *sender) {
+    pthread_mutex_lock(&recordMutex);
+    string result = activeUsers.size() > 0? "1": "0";
+    pthread_mutex_unlock(&recordMutex);
+    return result;
+}
+
+void switchTrackable(bool oldValue, bool newValue, connectionInfo *sender) {
+    if (newValue) {
+        //Track this device
+        trackingUserList.insert(sender->hostname);
+        saveUserList();
+        //Update active list
+        _newConnection(sender);
+    } else {
+        //Stop tracking
+        trackingUserList.erase(sender->hostname);
+        saveUserList();
+        //Update active list
+        _deadConnection(sender);
+    }
+}
+
+void identity(bool oldValue, bool newValue, connectionInfo *sender) {
+    printf("Identify\n");
 }
 
 AccessorySet *accSet;
 
 void initAccessorySet() {
-    currentDeviceType = deviceType_lightBulb;
     
-    printf("Initial Accessory\n");
+    newConnection = &_newConnection;
+    deadConnection = &_deadConnection;
+    
+    loadUserList();
+    
+    pthread_mutex_init(&recordMutex, NULL);
+    
+    currentDeviceType = deviceType_sensor;
+    
+    printf("Initial Sensor\n");
     accSet = &AccessorySet::getInstance();
-    Accessory *lightAcc = new Accessory();
-    addInfoServiceToAccessory(lightAcc, "Light 1", "ET", "Light", "12345678", &lightIdentify);
-    accSet->addAccessory(lightAcc);
+    Accessory *sensorAcc = new Accessory();
+    addInfoServiceToAccessory(sensorAcc, "Wi-Fi Sensor", "ET", "Wi-Fi Sensor v1", "12345678", &identity);
+    accSet->addAccessory(sensorAcc);
 
-    Service *lightService = new Service(serviceType_lightBulb);
-    lightAcc->addService(lightService);
+    Service *sensorService = new Service(serviceType_occupancySensor);
+    sensorAcc->addService(sensorService);
 
-    stringCharacteristics *lightServiceName = new stringCharacteristics(charType_serviceName, premission_read, 0);
-    lightServiceName->setValue("Light");
-    lightAcc->addCharacteristics(lightService, lightServiceName);
+    stringCharacteristics *sensorServiceName = new stringCharacteristics(charType_serviceName, premission_read, 0);
+    sensorServiceName->characteristics::setValue("Wi-Fi Sensor");
+    sensorAcc->addCharacteristics(sensorService, sensorServiceName);
 
-    boolCharacteristics *powerState = new boolCharacteristics(charType_on, premission_read|premission_write|premission_notify);
-    powerState->setValue("true");
-    powerState->valueChangeFunctionCall = &changeLightPower;
-    lightAcc->addCharacteristics(lightService, powerState);
+    boolCharacteristics *trackableState = new boolCharacteristics(0x10000, premission_read|premission_write);
+    trackableState->characteristics::setValue("false");
+    trackableState->perUserQuery = &trackable;
+    trackableState->valueChangeFunctionCall = &switchTrackable;
+    sensorAcc->addCharacteristics(sensorService, trackableState);
 
-    intCharacteristics *brightnessState = new intCharacteristics(charType_brightness, premission_read|premission_write|premission_notify, 0, 100, 1, unit_percentage);
-    brightnessState->setValue("50");
-    brightnessState->valueChangeFunctionCall = &changeLightIntensity;
-    lightAcc->addCharacteristics(lightService, brightnessState);
+    occupyState = new intCharacteristics(charType_occupancyDetected, premission_read|premission_notify, 0, 1, 1, unit_none);
+    occupyState->characteristics::setValue("0");
+    occupyState->perUserQuery = &calculateOccupy;
+    sensorAcc->addCharacteristics(sensorService, occupyState);
 };

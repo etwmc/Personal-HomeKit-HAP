@@ -7,6 +7,7 @@
 //
 
 #include "PHKAccessory.h"
+#include "PHKNetworkIP.h"
 #include "Configuration.h"
 
 
@@ -14,9 +15,168 @@ const char hapJsonType[] = "application/hap+json";
 const char pairingTlv8Type[] = "application/pairing+tlv8";
 
 
+void *announce(void *info) {
+    broadcastInfo *_info = (broadcastInfo *)info;
+    void *sender = _info->sender;
+    char *desc = _info->desc;
+    
+    char *reply = new char[1024];
+    int len = snprintf(reply, 1024, "EVENT/1.0 200 OK\r\nContent-Type: application/hap+json\r\nContent-Length: %lu\r\n\r\n%s", strlen(desc), desc);
+    
+#if HomeKitLog == 1 && HomeKitReplyHeaderLog==1
+    printf("%s\n", reply);
+#endif
+    
+    broadcastMessage(sender, reply, len);
+    delete [] reply;
+    
+    delete [] desc;
+    delete [] info;
+}
+
 //Wrap to JSON
 inline string wrap(const char *str) { return (string)"\""+str+"\""; }
-inline string attribute(unsigned short type, unsigned short acclaim, int p, bool value) {
+//Value String
+inline string attribute(unsigned int type, unsigned short acclaim, int p, string value) {
+    string result;
+    if (p & premission_read) {
+        result += wrap("value")+":";
+        result += value;
+        result += ",";
+    }
+    
+    result += wrap("perms")+":";
+    result += "[";
+    if (p & premission_read) result += wrap("pr")+",";
+    if (p & premission_write) result += wrap("pw")+",";
+    if (p & premission_notify) result += wrap("ev")+",";
+    result = result.substr(0, result.size()-1);
+    result += "]";
+    result += ",";
+    
+    char tempStr[4];
+    snprintf(tempStr, 4, "%X", type);
+    result += wrap("type")+":"+wrap(tempStr);
+    result += ",";
+    
+    snprintf(tempStr, 4, "%hd", acclaim);
+    result += wrap("iid")+":"+tempStr;
+    result += ",";
+    
+    result += "\"format\":\"bool\"";
+    
+    return "{"+result+"}";
+}
+inline string attribute(unsigned int type, unsigned short acclaim, int p, string value, int minVal, int maxVal, int step, unit valueUnit) {
+    string result;
+    char tempStr[16];
+    
+    if (p & premission_read) {
+        result += wrap("value")+":"+value;
+        result += ",";
+    }
+    
+    snprintf(tempStr, 16, "%d", minVal);
+    if (minVal != INT32_MIN)
+        result += wrap("minValue")+":"+tempStr+",";
+    
+    snprintf(tempStr, 16, "%d", maxVal);
+    if (maxVal != INT32_MAX)
+        result += wrap("maxValue")+":"+tempStr+",";
+    
+    snprintf(tempStr, 16, "%d", step);
+    if (step > 0)
+        result += wrap("minStep")+":"+tempStr+",";
+    
+    result += wrap("perms")+":";
+    result += "[";
+    if (p & premission_read) result += wrap("pr")+",";
+    if (p & premission_write) result += wrap("pw")+",";
+    if (p & premission_notify) result += wrap("ev")+",";
+    result = result.substr(0, result.size()-1);
+    result += "]";
+    result += ",";
+    
+    snprintf(tempStr, 16, "%X", type);
+    result += wrap("type")+":"+wrap(tempStr);
+    result += ",";
+    
+    snprintf(tempStr, 16, "%hd", acclaim);
+    result += wrap("iid")+":"+tempStr;
+    result += ",";
+    
+    switch (valueUnit) {
+        case unit_arcDegree:
+            result += wrap("unit")+":"+wrap("arcdegrees")+",";
+            break;
+        case unit_celsius:
+            result += wrap("unit")+":"+wrap("celsius")+",";
+            break;
+        case unit_percentage:
+            result += wrap("unit")+":"+wrap("percentage")+",";
+            break;
+    }
+    
+    result += "\"format\":\"int\"";
+    
+    return "{"+result+"}";
+}
+inline string attribute(unsigned int type, unsigned short acclaim, int p, string value, float minVal, float maxVal, float step, unit valueUnit) {
+    string result;
+    char tempStr[16];
+    
+    if (p & premission_read) {
+        result += wrap("value")+":"+value;
+        result += ",";
+    }
+    
+    snprintf(tempStr, 16, "%f", minVal);
+    if (minVal != INT32_MIN)
+        result += wrap("minValue")+":"+tempStr+",";
+    
+    snprintf(tempStr, 16, "%f", maxVal);
+    if (maxVal != INT32_MAX)
+        result += wrap("maxValue")+":"+tempStr+",";
+    
+    snprintf(tempStr, 16, "%f", step);
+    if (step > 0)
+        result += wrap("minStep")+":"+tempStr+",";
+    
+    result += wrap("perms")+":";
+    result += "[";
+    if (p & premission_read) result += wrap("pr")+",";
+    if (p & premission_write) result += wrap("pw")+",";
+    if (p & premission_notify) result += wrap("ev")+",";
+    result = result.substr(0, result.size()-1);
+    result += "]";
+    result += ",";
+    
+    snprintf(tempStr, 16, "%X", type);
+    result += wrap("type")+":"+wrap(tempStr);
+    result += ",";
+    
+    snprintf(tempStr, 16, "%hd", acclaim);
+    result += wrap("iid")+":"+tempStr;
+    result += ",";
+    
+    switch (valueUnit) {
+        case unit_arcDegree:
+            result += wrap("unit")+":"+wrap("arcdegrees")+",";
+            break;
+        case unit_celsius:
+            result += wrap("unit")+":"+wrap("celsius")+",";
+            break;
+        case unit_percentage:
+            result += wrap("unit")+":"+wrap("percentage")+",";
+            break;
+    }
+    
+    result += "\"format\":\"float\"";
+    
+    return "{"+result+"}";
+}
+//Raw value
+inline string attribute(unsigned int type, unsigned short acclaim, int p, bool value) {
     string result;
     if (p & premission_read) {
         result += wrap("value")+":";
@@ -47,26 +207,26 @@ inline string attribute(unsigned short type, unsigned short acclaim, int p, bool
     
     return "{"+result+"}";
 }
-inline string attribute(unsigned short type, unsigned short acclaim, int p, int value, int minVal, int maxVal, int step, unit valueUnit) {
+inline string attribute(unsigned int type, unsigned short acclaim, int p, int value, int minVal, int maxVal, int step, unit valueUnit) {
     string result;
-    char tempStr[4];
+    char tempStr[16];
     
-    snprintf(tempStr, 4, "%d", value);
+    snprintf(tempStr, 16, "%d", value);
     
     if (p & premission_read) {
         result += wrap("value")+":"+tempStr;
         result += ",";
     }
     
-    snprintf(tempStr, 4, "%d", minVal);
+    snprintf(tempStr, 16, "%d", minVal);
     if (minVal != INT32_MIN)
         result += wrap("minValue")+":"+tempStr+",";
     
-    snprintf(tempStr, 4, "%d", maxVal);
+    snprintf(tempStr, 16, "%d", maxVal);
     if (maxVal != INT32_MAX)
         result += wrap("maxValue")+":"+tempStr+",";
     
-    snprintf(tempStr, 4, "%d", step);
+    snprintf(tempStr, 16, "%d", step);
     if (step > 0)
         result += wrap("minStep")+":"+tempStr+",";
     
@@ -79,11 +239,11 @@ inline string attribute(unsigned short type, unsigned short acclaim, int p, int 
     result += "]";
     result += ",";
     
-    snprintf(tempStr, 4, "%X", type);
+    snprintf(tempStr, 16, "%X", type);
     result += wrap("type")+":"+wrap(tempStr);
     result += ",";
     
-    snprintf(tempStr, 4, "%hd", acclaim);
+    snprintf(tempStr, 16, "%hd", acclaim);
     result += wrap("iid")+":"+tempStr;
     result += ",";
     
@@ -103,26 +263,26 @@ inline string attribute(unsigned short type, unsigned short acclaim, int p, int 
     
     return "{"+result+"}";
 }
-inline string attribute(unsigned short type, unsigned short acclaim, int p, float value, float minVal, float maxVal, float step, unit valueUnit) {
+inline string attribute(unsigned int type, unsigned short acclaim, int p, float value, float minVal, float maxVal, float step, unit valueUnit) {
     string result;
-    char tempStr[4];
+    char tempStr[16];
     
-    snprintf(tempStr, 4, "%f", value);
+    snprintf(tempStr, 16, "%f", value);
     
     if (p & premission_read) {
         result += wrap("value")+":"+tempStr;
         result += ",";
     }
     
-    snprintf(tempStr, 4, "%f", minVal);
+    snprintf(tempStr, 16, "%f", minVal);
     if (minVal != INT32_MIN)
         result += wrap("minValue")+":"+tempStr+",";
     
-    snprintf(tempStr, 4, "%f", maxVal);
+    snprintf(tempStr, 16, "%f", maxVal);
     if (maxVal != INT32_MAX)
         result += wrap("maxValue")+":"+tempStr+",";
     
-    snprintf(tempStr, 4, "%f", step);
+    snprintf(tempStr, 16, "%f", step);
     if (step > 0)
         result += wrap("minStep")+":"+tempStr+",";
     
@@ -135,11 +295,11 @@ inline string attribute(unsigned short type, unsigned short acclaim, int p, floa
     result += "]";
     result += ",";
     
-    snprintf(tempStr, 4, "%X", type);
+    snprintf(tempStr, 16, "%X", type);
     result += wrap("type")+":"+wrap(tempStr);
     result += ",";
     
-    snprintf(tempStr, 4, "%hd", acclaim);
+    snprintf(tempStr, 16, "%hd", acclaim);
     result += wrap("iid")+":"+tempStr;
     result += ",";
     
@@ -159,12 +319,12 @@ inline string attribute(unsigned short type, unsigned short acclaim, int p, floa
     
     return "{"+result+"}";
 }
-inline string attribute(unsigned short type, unsigned short acclaim, int p, string value, unsigned short len) {
+inline string attribute(unsigned int type, unsigned short acclaim, int p, string value, unsigned short len) {
     string result;
     char tempStr[4];
     
     if (p & premission_read) {
-        result += wrap("value")+":"+wrap(value.c_str());
+        result += wrap("value")+":"+value.c_str();
         result += ",";
     }
     
@@ -224,24 +384,33 @@ inline string dictionaryWrap(string *key, string *value, unsigned short len) {
     return result;
 }
 
-
-string boolCharacteristics::describe() {
-    return attribute(type, iid, premission, _value);
+void characteristics::notify() {
+    char *broadcastTemp = new char[1024];
+    snprintf(broadcastTemp, 1024, "{\"characteristics\":[{\"aid\": %d, \"iid\": %d, \"value\": %s}]}", accessory->aid, iid, value(NULL).c_str());
+    broadcastInfo * info = new broadcastInfo;
+    info->sender = this;
+    info->desc = broadcastTemp;
+    pthread_t thread;
+    pthread_create(&thread, NULL, announce, info);
 }
 
-string floatCharacteristics::describe() {
-    return attribute(type, iid, premission, _value, _minVal, _maxVal, _step, _unit);
+string boolCharacteristics::describe(connectionInfo *sender) {
+    return attribute(type, iid, premission, value(sender));
 }
 
-string intCharacteristics::describe() {
-    return attribute(type, iid, premission, _value, _minVal, _maxVal, _step, _unit);
+string floatCharacteristics::describe(connectionInfo *sender) {
+    return attribute(type, iid, premission, value(sender), _minVal, _maxVal, _step, _unit);
 }
 
-string stringCharacteristics::describe() {
-    return attribute(type, iid, premission, _value, maxLen);
+string intCharacteristics::describe(connectionInfo *sender) {
+    return attribute(type, iid, premission, value(sender), _minVal, _maxVal, _step, _unit);
 }
 
-string Service::describe() {
+string stringCharacteristics::describe(connectionInfo *sender) {
+    return attribute(type, iid, premission, value(sender), maxLen);
+}
+
+string Service::describe(connectionInfo *sender) {
     string keys[3] = {"iid", "type", "characteristics"};
     string values[3];
     {
@@ -258,7 +427,7 @@ string Service::describe() {
         int no = numberOfCharacteristics();
         string *chars = new string[no];
         for (int i = 0; i < no; i++) {
-            chars[i] = _characteristics[i]->describe();
+            chars[i] = _characteristics[i]->describe(sender);
         }
         values[2] = arrayWrap(chars, no);
         delete [] chars;
@@ -266,7 +435,7 @@ string Service::describe() {
     return dictionaryWrap(keys, values, 3);
 }
 
-string Accessory::describe() {
+string Accessory::describe(connectionInfo *sender) {
     string keys[2];
     string values[2];
     
@@ -282,7 +451,7 @@ string Accessory::describe() {
         int noOfService = numberOfService();
         string *services = new string[noOfService];
         for (int i = 0; i < noOfService; i++) {
-            services[i] = _services[i]->describe();
+            services[i] = _services[i]->describe(sender);
         }
         keys[1] = "services";
         values[1] = arrayWrap(services, noOfService);
@@ -293,41 +462,17 @@ string Accessory::describe() {
     return result;
 }
 
-string AccessorySet::describe() {
+string AccessorySet::describe(connectionInfo *sender) {
     int numberOfAcc = numberOfAccessory();
     string *desc = new string[numberOfAcc];
     for (int i = 0; i < numberOfAcc; i++) {
-        desc[i] = _accessories[i]->describe();
+        desc[i] = _accessories[i]->describe(sender);
     }
     string result = arrayWrap(desc, numberOfAcc);
     delete [] desc;
     string key = "accessories";
     result = dictionaryWrap(&key, &result, 1);
     return result;
-}
-
-struct broadcastInfo {
-    void *sender;
-    char *desc;
-};
-
-void *announce(void *info) {
-    broadcastInfo *_info = (broadcastInfo *)info;
-    void *sender = _info->sender;
-    char *desc = _info->desc;
-    
-    char *reply = new char[1024];
-    int len = snprintf(reply, 1024, "EVENT/1.0 200 OK\r\nContent-Type: application/hap+json\r\nContent-Length: %lu\r\n\r\n%s", strlen(desc), desc);
-    
-#if HomeKitLog == 1 && HomeKitReplyHeaderLog==1
-    printf("%s\n", reply);
-#endif
-    
-    broadcastMessage(sender, reply, len);
-    delete [] reply;
-    
-    delete [] desc;
-    delete [] info;
 }
 
 void updateValueFromDeviceEnd(characteristics *c, int aid, int iid, string value) {
@@ -378,7 +523,7 @@ void handleAccessory(const char *request, unsigned int requestLen, char **reply,
     
     char *replyData = NULL;  unsigned short replyDataLen = 0;
     
-    int statusCode;
+    int statusCode = 0;
     
     const char *protocol = "HTTP/1.1";
     const char *returnType = hapJsonType;
@@ -389,7 +534,7 @@ void handleAccessory(const char *request, unsigned int requestLen, char **reply,
         printf("Ask for accessories info\n");
 #endif
         statusCode = 200;
-        string desc = AccessorySet::getInstance().describe();
+        string desc = AccessorySet::getInstance().describe(sender);
         replyDataLen = desc.length();
         replyData = new char[replyDataLen+1];
         bcopy(desc.c_str(), replyData, replyDataLen);
@@ -397,12 +542,14 @@ void handleAccessory(const char *request, unsigned int requestLen, char **reply,
     } else if (strcmp(path, "/pairings") == 0) {
         PHKNetworkMessage msg(request);
         statusCode = 200;
+    #if HomeKitLog == 1
         printf("%d\n", *msg.data.dataPtrForIndex(0));
+    #endif
         if (*msg.data.dataPtrForIndex(0) == 3) {
             //Pairing with new user
-#if HomeKitLog == 1
+
             printf("Add new user\n");
-#endif
+
             PHKKeyRecord controllerRec;
             bcopy(msg.data.dataPtrForIndex(3), controllerRec.publicKey, 32);
             bcopy(msg.data.dataPtrForIndex(1), controllerRec.controllerID, 36);
@@ -416,9 +563,9 @@ void handleAccessory(const char *request, unsigned int requestLen, char **reply,
             returnType = pairingTlv8Type;
             statusCode = 200;
         } else {
-#if HomeKitLog == 1
+
             printf("Delete user");
-#endif
+
             PHKKeyRecord controllerRec;
             bcopy(msg.data.dataPtrForIndex(1), controllerRec.controllerID, 36);
             removeControllerKey(controllerRec);
@@ -431,6 +578,8 @@ void handleAccessory(const char *request, unsigned int requestLen, char **reply,
             returnType = pairingTlv8Type;
             statusCode = 200;
         }
+        //Pairing status change, so update
+        updatePairable();
     } else if (strncmp(path, "/characteristics", 16) == 0){
         pthread_mutex_lock(&AccessorySet::getInstance().accessoryMutex);
         printf("Characteristics\n");
@@ -440,6 +589,8 @@ void handleAccessory(const char *request, unsigned int requestLen, char **reply,
             
             char indexBuffer[1000];
             sscanf(path, "/characteristics?id=%[^\n]", indexBuffer);
+            
+            
             printf("Get characteristics %s with len %d\n", indexBuffer, strlen(indexBuffer));
             
             statusCode = 404;
@@ -472,7 +623,7 @@ void handleAccessory(const char *request, unsigned int requestLen, char **reply,
                         char c1[3], c2[3];
                         sprintf(c1, "%d", aid);
                         sprintf(c2, "%d", iid);
-                        string s[3] = {string(c1), string(c2), c->value()};
+                        string s[3] = {string(c1), string(c2), c->value(sender)};
                         string k[3] = {"aid", "iid", "value"};
                         if (result.length() != 1) {
                             result += ",";
@@ -499,6 +650,7 @@ void handleAccessory(const char *request, unsigned int requestLen, char **reply,
             
         } else if (strncmp(method, "PUT", 3) == 0) {
             //Change characteristics
+            printf("PUT characteristics: \n");
             
             char characteristicsBuffer[1000];
             sscanf(dataPtr, "{\"characteristics\":[{%[^]]s}", characteristicsBuffer);
@@ -521,7 +673,9 @@ void handleAccessory(const char *request, unsigned int requestLen, char **reply,
                         sscanf(buffer1, "\"remote\":true,\"aid\":%d,\"iid\":%d,\"ev\":%s", &aid, &iid, value);
                         updateNotify = true;
                     }
+                    sender->relay = true;
                 }
+                printf("%d . %d\n",aid, iid);
                 
                 Accessory *a = AccessorySet::getInstance().accessoryAtIndex(aid);
                 if (a==NULL) {
@@ -537,7 +691,10 @@ void handleAccessory(const char *request, unsigned int requestLen, char **reply,
                             statusCode = 400;
                         } else {
                             if (c->notifiable()) {
-                                sender->addNotify(c);
+                                if (strncmp(value, "1", 1)==0 || strncmp(value, "true", 4) == 0)
+                                    sender->addNotify(c, aid, iid);
+                                else
+                                    sender->removeNotify(c);
                                 
                                 statusCode = 204;
                             } else {
@@ -552,7 +709,7 @@ void handleAccessory(const char *request, unsigned int requestLen, char **reply,
                             statusCode = 400;
                         } else {
                             if (c->writable()) {
-                                c->setValue(value);
+                                c->setValue(value, sender);
                                 
                                 char *broadcastTemp = new char[1024];
                                 snprintf(broadcastTemp, 1024, "{\"characteristics\":[{%s}]}", buffer1);
@@ -617,23 +774,23 @@ void addInfoServiceToAccessory(Accessory *acc, string accName, string manufactue
     acc->addService(infoService);
     
     stringCharacteristics *accNameCha = new stringCharacteristics(charType_serviceName, premission_read, 0);
-    accNameCha->setValue(accName);
+    accNameCha->characteristics::setValue(accName);
     acc->addCharacteristics(infoService, accNameCha);
     
     stringCharacteristics *manNameCha = new stringCharacteristics(charType_manufactuer, premission_read, 0);
-    manNameCha->setValue(manufactuerName);
+    manNameCha->characteristics::setValue(manufactuerName);
     acc->addCharacteristics(infoService, manNameCha);
     
     stringCharacteristics *modelNameCha = new stringCharacteristics(charType_modelName, premission_read, 0);
-    modelNameCha->setValue(modelName);
+    modelNameCha->characteristics::setValue(modelName);
     acc->addCharacteristics(infoService, modelNameCha);
     
     stringCharacteristics *serialNameCha = new stringCharacteristics(charType_serialNumber, premission_read, 0);
-    serialNameCha->setValue(serialNumber);
+    serialNameCha->characteristics::setValue(serialNumber);
     acc->addCharacteristics(infoService, serialNameCha);
     
     boolCharacteristics *identify = new boolCharacteristics(charType_identify, premission_write);
-    identify->setValue("false");
+    identify->characteristics::setValue("false");
     identify->valueChangeFunctionCall = identifyCallback;
     acc->addCharacteristics(infoService, identify);
 }

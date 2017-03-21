@@ -7,17 +7,17 @@
 //
 //
 
-#define HomeKitLog 1
-#define HomeKitReplyHeaderLog 1
+#define HomeKitLog 0
+#define HomeKitReplyHeaderLog 0
 #define PowerOnTest 0
 
 //Device Setting
-#define deviceName "House Light"    //Name
-#define deviceIdentity "12:10:34:23:51:12"  //ID
+#define deviceName "House Sensor"    //Name
+#define deviceIdentity "11:10:34:23:51:12"  //ID
 #define _manufactuerName "ET Chan"   //Manufactuer
 #define devicePassword "523-12-643" //Password
 #define deviceUUID "62F47751-8F26-46BF-9552-8F4238E67D60"   //UUID, for pair verify
-#define controllerRecordsAddress "/var/PHK_controller" //Where to store the client keys
+#define controllerRecordsAddress "./PHK_controller" //Where to store the client keys
 
 //Number of client
 /*
@@ -31,7 +31,9 @@
  * Count how many notifiable value exist in your set
  * For dynamic add/drop model, please estimate the maximum number (Too few->Buffer overflow)
  */
-#define numberOfNotifiableValue 1
+#define numberOfNotifiableValue 2
+
+#define keepAlivePeriod 60
 
 //If you compiling this to microcontroller, set it to 1
 #define MCU 0
