@@ -1,5 +1,14 @@
 #PersonalHomeKit
 This is a static version. For dynamic add/remove accessories/services, switch to the Dynamic branch
+
+#Plug for relative project
+
+Want to turn off the lights when everyone is out? How about closing the gas valve? Introduing a derived project: WiFi-Radar. No apps needed, no GPS tracing. All you need is a Wi-Fi network and a *nix running system
+[WiFi-Radar-HAP](https://github.com/etwmc/WiFi-RadarHAP)
+
+Also, the first HomeKit test and benchmark app
+[HomeKitTester](http://github.com/etwmc/HomeKitTester)
+
 ===============
 Known error: <br>
 No notify function<br>
