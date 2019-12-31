@@ -1,8 +1,19 @@
-#PersonalHomeKit
+**PersonalHomeKit**
+
+---------------
+Update at 12/31/2019:
+For the last two and a half years, I've been working in a smart home company. Therefore, to avoid complication, I have not updated this repo since joined. And while I have continue develop on my personal build and projects using this project, it's unlikely I will be able to publish anything. 
+The good thing is, since this will continue exist, and the HomeKit Accessory protocol Spec has been released for the hobbyists, there should be sufficient information updating for future iOS support. 
+In the future, if anyone is interested in contribute for the project, please let me know. 
+Thanks, 
+Raymond Chan
+
+---------------
+
 This is a user based version (the characteristic is depended on the connection session). For dynamic or static version(MCU version), switch to the correspondent branch. 
 Now support multiple characteristic, notify function
 
-#Plug for relative project
+Plug for relative project
 
 Want to turn off the lights when everyone is out? How about closing the gas valve? Introduing a derived project: WiFi-Radar. No apps needed, no GPS tracing. All you need is a Wi-Fi network and a *nix running system
 [WiFi-Radar-HAP](https://github.com/etwmc/WiFi-RadarHAP)
